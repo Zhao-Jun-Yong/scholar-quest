@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
 import { DEFAULT_MILESTONE_TEMPLATES } from './constants';
 import type ScholarQuestPlugin from './main';
 
@@ -155,6 +155,36 @@ export class ScholarQuestSettings extends PluginSettingTab {
         }
       };
     }
+
+    // Danger Zone
+    containerEl.createEl('h3', { text: 'Danger Zone' });
+
+    new Setting(containerEl)
+      .setName('Clear activity log')
+      .setDesc('Remove all entries from the activity log. XP and level are kept.')
+      .addButton(b => b.setButtonText('Clear log').setWarning().onClick(async () => {
+        if (window.confirm('Clear all activity log entries? XP and level will not change.')) {
+          this.plugin.pluginData.activities = [];
+          await this.save();
+          new Notice('Activity log cleared.');
+        }
+      }));
+
+    new Setting(containerEl)
+      .setName('Reset all progress')
+      .setDesc('Reset XP, level, and activity log to zero. Milestone records are kept.')
+      .addButton(b => b.setButtonText('Reset progress').setWarning().onClick(async () => {
+        if (window.confirm('Reset all XP, level, and activity log? This cannot be undone.')) {
+          this.plugin.pluginData.totalXP = 0;
+          this.plugin.pluginData.level = 1;
+          this.plugin.pluginData.todayXP = 0;
+          this.plugin.pluginData.activities = [];
+          this.plugin.pluginData.hasOnboarded = false;
+          this.plugin.engine.recalculateLevel();
+          await this.save();
+          new Notice('Progress reset.');
+        }
+      }));
   }
 
   private addTextSetting(el: HTMLElement, name: string, desc: string, key: string): void {

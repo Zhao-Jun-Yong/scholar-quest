@@ -8,12 +8,14 @@ export class VaultWatcher {
   private settings: XPSettings;
   private vault: Vault;
   private metadataCache: MetadataCache;
+  private loadedAt: number;
 
   constructor(engine: XPEngine, settings: XPSettings, vault: Vault, metadataCache: MetadataCache) {
     this.engine = engine;
     this.settings = settings;
     this.vault = vault;
     this.metadataCache = metadataCache;
+    this.loadedAt = Date.now();
   }
 
   // --- Pure analysis functions (unit-tested) ---
@@ -87,7 +89,12 @@ export class VaultWatcher {
     const rawTags = cache?.frontmatter?.tags;
     const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
 
+    // Only award XP for files genuinely created after this plugin session started.
+    // Obsidian fires 'create' for pre-existing files during initial vault indexing.
+    const isNewFile = file.stat.ctime >= this.loadedAt;
+
     if (
+      isNewFile &&
       this.isInFolder(file.path, this.settings.ideasFolder) &&
       this.hasTag(tags, this.settings.atomTag) &&
       !this.isSummaryFile(file.name)

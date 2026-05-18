@@ -5,7 +5,8 @@ export type ActivityType =
   | 'atomic-note-developed'
   | 'writing-progress'
   | 'milestone-completed'
-  | 'manual-log';
+  | 'manual-log'
+  | 'career-init';
 
 export interface ActivityEntry {
   timestamp: number;
@@ -78,4 +79,5 @@ export interface PluginData {
   milestones: Record<string, MilestoneRecord>;
   todayXP: number;
   todayDate: string;
+  hasOnboarded?: boolean;
 }

@@ -5,6 +5,8 @@ import { ManualLogger } from './manual-logger';
 import { MilestoneModal } from './milestone-modal';
 import { StatusBar } from './status-bar';
 import { ScholarQuestSettings } from './settings';
+import { OnboardingModal } from './onboarding-modal';
+import { SidebarView, SIDEBAR_VIEW_TYPE } from './sidebar-view';
 import { PluginData, XPSettings } from './types';
 import { DEFAULT_SETTINGS } from './constants';
 
@@ -16,6 +18,7 @@ const DEFAULT_DATA: PluginData = {
   milestones: {},
   todayXP: 0,
   todayDate: new Date().toISOString().split('T')[0],
+  hasOnboarded: false,
 };
 
 export default class ScholarQuestPlugin extends Plugin {
@@ -39,6 +42,10 @@ export default class ScholarQuestPlugin extends Plugin {
 
     this.statusBar = new StatusBar(this.addStatusBarItem(), this.engine);
     this.statusBar.update();
+
+    this.registerView(SIDEBAR_VIEW_TYPE, leaf => new SidebarView(leaf, this));
+
+    this.addRibbonIcon('graduation-cap', 'Scholar Quest', () => this.activateSidebar());
 
     this.registerEvent(
       this.app.vault.on('create', file => {
@@ -77,7 +84,87 @@ export default class ScholarQuestPlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: 'open-sidebar',
+      name: 'Open Scholar Quest panel',
+      callback: () => this.activateSidebar(),
+    });
+
+    this.addCommand({
+      id: 'import-career-history',
+      name: 'Import career history',
+      callback: () => this.openOnboarding(),
+    });
+
     this.addSettingTab(new ScholarQuestSettings(this.app, this));
+
+    this.app.workspace.onLayoutReady(() => {
+      this.initProjectMilestones();
+      if (!this.pluginData.hasOnboarded) {
+        this.openOnboarding();
+      }
+    });
+  }
+
+  async onunload(): Promise<void> {
+    this.app.workspace.detachLeavesOfType(SIDEBAR_VIEW_TYPE);
+  }
+
+  private openOnboarding(): void {
+    new OnboardingModal(this.app, this.engine, async (xp) => {
+      const prev = this.pluginData.activities.find(a => a.type === 'career-init');
+      if (prev) {
+        this.pluginData.totalXP = Math.max(0, this.pluginData.totalXP - prev.xp);
+        this.pluginData.todayXP = Math.max(0, this.pluginData.todayXP - prev.xp);
+        this.pluginData.activities = this.pluginData.activities.filter(a => a.type !== 'career-init');
+        this.engine.recalculateLevel();
+      }
+      if (xp > 0) {
+        await this.engine.awardXP(xp, 'career-init', 'Career history imported');
+      }
+      this.pluginData.hasOnboarded = true;
+      await this.savePluginData();
+      new Notice(`🎓 Starting at Level ${this.pluginData.level}.`);
+    }).open();
+  }
+
+  async activateSidebar(): Promise<void> {
+    const existing = this.app.workspace.getLeavesOfType(SIDEBAR_VIEW_TYPE);
+    if (existing.length) {
+      this.app.workspace.revealLeaf(existing[0]);
+      return;
+    }
+    const leaf = this.app.workspace.getRightLeaf(false);
+    if (leaf) {
+      await leaf.setViewState({ type: SIDEBAR_VIEW_TYPE, active: true });
+      this.app.workspace.revealLeaf(leaf);
+    }
+  }
+
+  private async initProjectMilestones(): Promise<void> {
+    const files = this.app.vault.getMarkdownFiles();
+    for (const file of files) {
+      if (!file.path.startsWith(this.settings.projectsFolder + '/')) continue;
+      if (this.engine.getMilestoneRecord(file.path)) continue;
+      const cache = this.app.metadataCache.getFileCache(file);
+      const rawTags = cache?.frontmatter?.tags;
+      const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
+      const projectType = this.detectProjectType(tags);
+      if (projectType) await this.engine.initMilestoneRecord(file.path, projectType);
+    }
+  }
+
+  private detectProjectType(tags: string[]): string | null {
+    for (const [type, tag] of Object.entries(this.settings.projectTags)) {
+      if (tags.includes(tag) || tags.includes('#' + tag)) return type;
+    }
+    return null;
+  }
+
+  private refreshSidebar(): void {
+    this.app.workspace.getLeavesOfType(SIDEBAR_VIEW_TYPE).forEach(leaf => {
+      if (leaf.view instanceof SidebarView) leaf.view.render();
+    });
   }
 
   async loadPluginData(): Promise<void> {
@@ -91,11 +178,13 @@ export default class ScholarQuestPlugin extends Plugin {
       milestones: saved?.milestones ?? {},
       todayXP: saved?.todayXP ?? 0,
       todayDate: saved?.todayDate ?? DEFAULT_DATA.todayDate,
+      hasOnboarded: saved?.hasOnboarded ?? ((saved?.activities?.length ?? 0) > 0),
     };
   }
 
   async savePluginData(): Promise<void> {
     await this.saveData({ settings: this.settings, ...this.pluginData });
     this.statusBar?.update();
+    this.refreshSidebar();
   }
 }
