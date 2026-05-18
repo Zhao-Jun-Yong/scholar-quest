@@ -116,6 +116,38 @@ export const DEFAULT_MILESTONE_TEMPLATES: Record<string, MilestoneTemplate[]> = 
   ],
 };
 
+import { AchievementDef } from './types';
+
+export const ACHIEVEMENTS: AchievementDef[] = [
+  // First steps
+  { id: 'first-xp',        name: 'First Steps',        icon: '🌱', description: 'Earn your first XP',                      condition: { type: 'totalXP', xp: 1 } },
+  { id: 'first-note',      name: 'First Idea',          icon: '💡', description: 'Create your first atomic note',           condition: { type: 'activityCount', activityType: 'atomic-note-created', count: 1 } },
+  { id: 'first-paper',     name: 'First Read',          icon: '📖', description: 'Complete your first paper',               condition: { type: 'activityCount', activityType: 'paper-completed', count: 1 } },
+  { id: 'first-milestone', name: 'Milestone Unlocked',  icon: '🏁', description: 'Complete your first project milestone',   condition: { type: 'activityCount', activityType: 'milestone-completed', count: 1 } },
+  // Quantity
+  { id: 'notes-25',        name: 'Idea Machine',        icon: '🧠', description: 'Create 25 atomic notes',                  condition: { type: 'activityCount', activityType: 'atomic-note-created', count: 25 } },
+  { id: 'notes-100',       name: 'Deep Thinker',        icon: '🔬', description: 'Create 100 atomic notes',                 condition: { type: 'activityCount', activityType: 'atomic-note-created', count: 100 } },
+  { id: 'papers-10',       name: 'Bookworm',            icon: '📚', description: 'Complete 10 papers',                      condition: { type: 'activityCount', activityType: 'paper-completed', count: 10 } },
+  { id: 'milestones-10',   name: 'On a Roll',           icon: '🎯', description: 'Complete 10 project milestones',          condition: { type: 'activityCount', activityType: 'milestone-completed', count: 10 } },
+  { id: 'milestones-25',   name: 'Overachiever',        icon: '🚀', description: 'Complete 25 project milestones',          condition: { type: 'activityCount', activityType: 'milestone-completed', count: 25 } },
+  // Level
+  { id: 'level-5',         name: 'Ember',               icon: '🔥', description: 'Reach Level 5',                          condition: { type: 'level', level: 5 } },
+  { id: 'level-10',        name: 'Flame',               icon: '🌟', description: 'Reach Level 10',                         condition: { type: 'level', level: 10 } },
+  { id: 'level-15',        name: 'Beacon',              icon: '💫', description: 'Reach Level 15',                         condition: { type: 'level', level: 15 } },
+  { id: 'level-20',        name: 'Nova',                icon: '⭐', description: 'Reach Level 20',                         condition: { type: 'level', level: 20 } },
+  { id: 'level-25',        name: 'Transcendent',        icon: '✨', description: 'Reach the maximum level',                condition: { type: 'level', level: 25 } },
+  // XP
+  { id: 'xp-1000',         name: 'Getting Warmed Up',   icon: '⚡', description: 'Earn 1,000 XP',                          condition: { type: 'totalXP', xp: 1000 } },
+  { id: 'xp-5000',         name: 'In the Zone',         icon: '💪', description: 'Earn 5,000 XP',                          condition: { type: 'totalXP', xp: 5000 } },
+  { id: 'xp-20000',        name: 'Veteran',             icon: '🏆', description: 'Earn 20,000 XP',                         condition: { type: 'totalXP', xp: 20000 } },
+  // Specific academic milestones (match "Milestone: <label>")
+  { id: 'submitted',       name: 'Under Review',        icon: '📬', description: 'Submit a manuscript or grant',           condition: { type: 'milestoneLabel', label: 'Submitted' } },
+  { id: 'accepted',        name: 'Accepted!',           icon: '🎉', description: 'Get a manuscript accepted',              condition: { type: 'milestoneLabel', label: 'Accepted' } },
+  { id: 'awarded',         name: 'Funded!',             icon: '💰', description: 'Win a grant',                            condition: { type: 'milestoneLabel', label: 'Awarded' } },
+  { id: 'defended',        name: 'Doctor!',             icon: '🎓', description: 'Defend your thesis',                     condition: { type: 'milestoneLabel', label: 'Defended' } },
+  { id: 'talk-delivered',  name: 'On Stage',            icon: '🎤', description: 'Deliver an invited talk',                condition: { type: 'milestoneLabel', label: 'Talk delivered' } },
+];
+
 export const TIER_ICONS: [string, string, string, string, string] = ['✨', '🔥', '🌟', '💫', '⭐'];
 
 export const ONBOARDING_XP = {

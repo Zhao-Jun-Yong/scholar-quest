@@ -180,6 +180,7 @@ export class ScholarQuestSettings extends PluginSettingTab {
           this.plugin.pluginData.todayXP = 0;
           this.plugin.pluginData.activities = [];
           this.plugin.pluginData.hasOnboarded = false;
+          this.plugin.pluginData.unlockedAchievements = {};
           this.plugin.engine.recalculateLevel();
           await this.save();
           new Notice('Progress reset.');

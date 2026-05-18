@@ -8,7 +8,8 @@ import { ScholarQuestSettings } from './settings';
 import { OnboardingModal } from './onboarding-modal';
 import { SidebarView, SIDEBAR_VIEW_TYPE } from './sidebar-view';
 import { PluginData, XPSettings } from './types';
-import { DEFAULT_SETTINGS } from './constants';
+import { DEFAULT_SETTINGS, ACHIEVEMENTS } from './constants';
+import { checkAchievement, checkNewAchievements } from './achievement-engine';
 
 const DEFAULT_DATA: PluginData = {
   totalXP: 0,
@@ -19,6 +20,7 @@ const DEFAULT_DATA: PluginData = {
   todayXP: 0,
   todayDate: new Date().toISOString().split('T')[0],
   hasOnboarded: false,
+  unlockedAchievements: {},
 };
 
 export default class ScholarQuestPlugin extends Plugin {
@@ -179,12 +181,29 @@ export default class ScholarQuestPlugin extends Plugin {
       todayXP: saved?.todayXP ?? 0,
       todayDate: saved?.todayDate ?? DEFAULT_DATA.todayDate,
       hasOnboarded: saved?.hasOnboarded ?? ((saved?.activities?.length ?? 0) > 0),
+      unlockedAchievements: saved?.unlockedAchievements ?? {},
     };
+
+    if (saved?.unlockedAchievements === undefined) {
+      for (const def of ACHIEVEMENTS) {
+        if (checkAchievement(def, this.pluginData)) {
+          this.pluginData.unlockedAchievements[def.id] = Date.now();
+        }
+      }
+      await this.saveData({ settings: this.settings, ...this.pluginData });
+    }
   }
 
   async savePluginData(): Promise<void> {
     await this.saveData({ settings: this.settings, ...this.pluginData });
     this.statusBar?.update();
     this.refreshSidebar();
+    const newlyUnlocked = checkNewAchievements(this.pluginData, ACHIEVEMENTS);
+    if (newlyUnlocked.length > 0) {
+      await this.saveData({ settings: this.settings, ...this.pluginData });
+      for (const ach of newlyUnlocked) {
+        new Notice(`${ach.icon} Achievement unlocked: ${ach.name} — ${ach.description}`, 6000);
+      }
+    }
   }
 }

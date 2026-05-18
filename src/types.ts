@@ -71,6 +71,20 @@ export interface XPSettings {
   statusBarIcon: string;
 }
 
+export type AchievementCondition =
+  | { type: 'totalXP'; xp: number }
+  | { type: 'level'; level: number }
+  | { type: 'activityCount'; activityType: ActivityType; count: number }
+  | { type: 'milestoneLabel'; label: string };
+
+export interface AchievementDef {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  condition: AchievementCondition;
+}
+
 export interface PluginData {
   totalXP: number;
   level: number;
@@ -80,4 +94,5 @@ export interface PluginData {
   todayXP: number;
   todayDate: string;
   hasOnboarded?: boolean;
+  unlockedAchievements: Record<string, number>;
 }
