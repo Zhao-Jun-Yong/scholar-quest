@@ -15,30 +15,34 @@ const makeData = (): PluginData => ({
 const makeSave = () => jest.fn().mockResolvedValue(undefined);
 
 describe('XPEngine.getTierIndex', () => {
-  it('returns 0 for levels 1–5', () => {
+  it('returns 0 for levels 1–4', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
     expect(e.getTierIndex(1)).toBe(0);
-    expect(e.getTierIndex(5)).toBe(0);
+    expect(e.getTierIndex(4)).toBe(0);
   });
-  it('returns 1 for levels 6–10', () => {
+  it('returns 1 for levels 5–8', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
-    expect(e.getTierIndex(6)).toBe(1);
-    expect(e.getTierIndex(10)).toBe(1);
+    expect(e.getTierIndex(5)).toBe(1);
+    expect(e.getTierIndex(8)).toBe(1);
   });
-  it('returns 4 for level 25', () => {
+  it('returns 6 for level 25', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
-    expect(e.getTierIndex(25)).toBe(4);
+    expect(e.getTierIndex(25)).toBe(6);
   });
 });
 
 describe('XPEngine.getTierName', () => {
-  it('returns Spark for level 1', () => {
+  it('returns Hatchling for level 1', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
-    expect(e.getTierName(1)).toBe('Spark');
+    expect(e.getTierName(1)).toBe('Hatchling');
   });
-  it('returns Nova for level 21', () => {
+  it('returns Flare for level 21', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
-    expect(e.getTierName(21)).toBe('Nova');
+    expect(e.getTierName(21)).toBe('Flare');
+  });
+  it('returns Nova for level 45', () => {
+    const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
+    expect(e.getTierName(45)).toBe('Nova');
   });
 });
 
@@ -72,11 +76,11 @@ describe('XPEngine.recalculateLevel', () => {
     e.recalculateLevel();
     expect(data.level).toBe(3);
   });
-  it('caps at level 25', () => {
+  it('caps at level 48', () => {
     const data = { ...makeData(), totalXP: 9_999_999 };
     const e = new XPEngine(data, DEFAULT_SETTINGS, makeSave());
     e.recalculateLevel();
-    expect(data.level).toBe(25);
+    expect(data.level).toBe(48);
   });
 });
 
