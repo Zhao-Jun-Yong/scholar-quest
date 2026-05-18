@@ -1,5 +1,7 @@
 import { ItemView, WorkspaceLeaf } from 'obsidian';
-import { ACHIEVEMENTS, TIER_ICONS, TIER_LEVEL_RANGES } from './constants';
+import { ACHIEVEMENTS, TIER_LEVEL_RANGES } from './constants';
+import { TIER_AVATARS } from './tier-avatars';
+import { PluginData } from './types';
 import type ScholarQuestPlugin from './main';
 
 export const SIDEBAR_VIEW_TYPE = 'scholar-quest-sidebar';
@@ -51,12 +53,13 @@ export class SidebarView extends ItemView {
 
     const tierIdx = Math.max(0, TIER_LEVEL_RANGES.findIndex(r => level >= r.min && level <= r.max));
     const tierName = settings.tierNames[tierIdx];
-    const tierIcon = TIER_ICONS[tierIdx];
 
     // Profile header
     const header = el.createDiv();
     header.style.cssText = 'text-align: center; margin-bottom: 12px;';
-    header.createDiv({ text: tierIcon }).style.cssText = 'font-size: 3em; line-height: 1.2;';
+    const avatarEl = header.createDiv();
+    avatarEl.style.cssText = 'width: 80px; height: 80px; margin: 0 auto 6px;';
+    avatarEl.innerHTML = TIER_AVATARS[tierIdx];
     header.createDiv({ text: `Level ${level} · ${tierName}` }).style.cssText = 'font-weight: 600; font-size: 1.05em; margin-top: 4px;';
     header.createDiv({ text: `${totalXP.toLocaleString()} XP total · +${todayXP} today` }).style.cssText = 'color: var(--text-muted); font-size: 0.82em; margin-top: 2px;';
 
@@ -126,7 +129,7 @@ export class SidebarView extends ItemView {
     }
   }
 
-  private renderAchievements(el: HTMLElement, data: ReturnType<typeof this.plugin.engine.getData>): void {
+  private renderAchievements(el: HTMLElement, data: PluginData): void {
     const unlocked = ACHIEVEMENTS.filter(a => a.id in data.unlockedAchievements);
     const locked = ACHIEVEMENTS.filter(a => !(a.id in data.unlockedAchievements));
 
