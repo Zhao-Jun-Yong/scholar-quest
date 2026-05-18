@@ -38,7 +38,8 @@ export class XPEngine {
   }
 
   getTodayDate(): string {
-    return new Date().toISOString().split('T')[0];
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   resetTodayXPIfNewDay(): void {
@@ -64,7 +65,7 @@ export class XPEngine {
     await this.saveCallback();
   }
 
-  getRemainingXPInLevel(): number {
+  getXPNeededForNextLevel(): number {
     let remaining = this.data.totalXP;
     let level = 1;
     while (level < this.data.level) {
@@ -76,8 +77,8 @@ export class XPEngine {
 
   getProgressBar(segments = 6): string {
     const needed = this.xpToNextLevel(this.data.level);
-    const earned = needed - this.getRemainingXPInLevel();
-    const filled = Math.round((earned / needed) * segments);
+    const earned = needed - this.getXPNeededForNextLevel();
+    const filled = Math.floor((earned / needed) * segments);
     return '█'.repeat(filled) + '░'.repeat(segments - filled);
   }
 
