@@ -75,7 +75,7 @@ All defaults are overridable in settings.
 ## Development
 
 ```bash
-git clone https://github.com/Zhao-Jun-Yong/scholar-quest
+git clone https://github.com/Zhao-Jun-Yong/scholar-quest.git
 cd scholar-quest
 npm install
 npm run dev    # watch mode — rebuilds main.js on save
