@@ -84,7 +84,8 @@ export class VaultWatcher {
   async onFileCreate(file: TFile): Promise<void> {
     const data = this.engine.getData();
     const cache = this.metadataCache.getFileCache(file);
-    const tags: string[] = (cache?.frontmatter?.tags as string[]) ?? [];
+    const rawTags = cache?.frontmatter?.tags;
+    const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
 
     if (
       this.isInFolder(file.path, this.settings.ideasFolder) &&
@@ -100,11 +101,12 @@ export class VaultWatcher {
     }
 
     const content = await this.vault.read(file);
+    const wordCount = this.countWords(content);
     data.snapshots[file.path] = {
-      wordCount: this.countWords(content),
+      wordCount,
       linkCount: this.countWikilinks(content),
       keywords: this.extractKeywords((cache?.frontmatter as Record<string, unknown>) ?? null),
-      peakWordCount: this.countWords(content),
+      peakWordCount: wordCount,
     };
   }
 
@@ -112,7 +114,8 @@ export class VaultWatcher {
     const data = this.engine.getData();
     const cache = this.metadataCache.getFileCache(file);
     const frontmatter = (cache?.frontmatter as Record<string, unknown>) ?? null;
-    const tags: string[] = (frontmatter?.tags as string[]) ?? [];
+    const rawTags2 = cache?.frontmatter?.tags;
+    const tags: string[] = Array.isArray(rawTags2) ? rawTags2 : [];
     const newKeywords = this.extractKeywords(frontmatter);
     const snapshot = data.snapshots[file.path];
 
