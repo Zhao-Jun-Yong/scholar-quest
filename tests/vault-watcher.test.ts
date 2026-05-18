@@ -1,0 +1,181 @@
+import { VaultWatcher } from '../src/vault-watcher';
+import { DEFAULT_SETTINGS } from '../src/constants';
+import { FileSnapshot } from '../src/types';
+
+const makeWatcher = () =>
+  new VaultWatcher({} as any, DEFAULT_SETTINGS, {} as any, {} as any);
+
+describe('VaultWatcher.countWords', () => {
+  it('counts body words, excluding YAML frontmatter', () => {
+    const w = makeWatcher();
+    expect(w.countWords('---\ntitle: Test\n---\nHello world foo')).toBe(3);
+  });
+  it('returns 0 for empty body', () => {
+    const w = makeWatcher();
+    expect(w.countWords('---\ntitle: x\n---\n')).toBe(0);
+  });
+  it('counts words in files without frontmatter', () => {
+    const w = makeWatcher();
+    expect(w.countWords('one two three')).toBe(3);
+  });
+});
+
+describe('VaultWatcher.countWikilinks', () => {
+  it('counts [[...]] patterns', () => {
+    const w = makeWatcher();
+    expect(w.countWikilinks('See [[Note A]] and [[Note B]].')).toBe(2);
+  });
+  it('returns 0 with no links', () => {
+    const w = makeWatcher();
+    expect(w.countWikilinks('Plain text')).toBe(0);
+  });
+});
+
+describe('VaultWatcher.extractKeywords', () => {
+  it('returns array from array frontmatter', () => {
+    const w = makeWatcher();
+    expect(w.extractKeywords({ keywords: ['👀 Skim', '📥 Unprocessed'] }))
+      .toEqual(['👀 Skim', '📥 Unprocessed']);
+  });
+  it('wraps string in array', () => {
+    const w = makeWatcher();
+    expect(w.extractKeywords({ keywords: '👀 Skim' })).toEqual(['👀 Skim']);
+  });
+  it('returns empty array for null frontmatter', () => {
+    const w = makeWatcher();
+    expect(w.extractKeywords(null)).toEqual([]);
+  });
+  it('returns empty array for frontmatter without keywords', () => {
+    const w = makeWatcher();
+    expect(w.extractKeywords({ title: 'Test' })).toEqual([]);
+  });
+});
+
+describe('VaultWatcher.detectReadingProgress', () => {
+  it('detects skimmed when 👀 appears for first time', () => {
+    const w = makeWatcher();
+    expect(w.detectReadingProgress(['📥 Unprocessed'], ['📥 Unprocessed', '👀 Skim']))
+      .toBe('skimmed');
+  });
+  it('detects completed when ✅ appears', () => {
+    const w = makeWatcher();
+    expect(w.detectReadingProgress(['👀 Skim'], ['✅ Completed'])).toBe('completed');
+  });
+  it('returns null when no relevant change', () => {
+    const w = makeWatcher();
+    expect(w.detectReadingProgress(['👀 Skim'], ['👀 Skim'])).toBeNull();
+  });
+  it('returns null when ✅ was already present', () => {
+    const w = makeWatcher();
+    expect(w.detectReadingProgress(['✅ Completed'], ['✅ Completed', '👀 Skim'])).toBeNull();
+  });
+  it('detects completed even when 👀 is also present', () => {
+    const w = makeWatcher();
+    expect(w.detectReadingProgress(['👀 Skim'], ['👀 Skim', '✅ Completed'])).toBe('completed');
+  });
+  it('does not return skimmed if ✅ also appears in same change', () => {
+    const w = makeWatcher();
+    expect(w.detectReadingProgress(['📥 Unprocessed'], ['👀 Skim', '✅ Completed']))
+      .toBe('completed');
+  });
+});
+
+describe('VaultWatcher.isInFolder', () => {
+  it('returns true when file is in folder', () => {
+    const w = makeWatcher();
+    expect(w.isInFolder('Atlas/Sources/paper.md', 'Atlas/Sources')).toBe(true);
+  });
+  it('returns false when file is not in folder', () => {
+    const w = makeWatcher();
+    expect(w.isInFolder('Atlas/Ideas/note.md', 'Atlas/Sources')).toBe(false);
+  });
+  it('handles trailing slash in folder argument', () => {
+    const w = makeWatcher();
+    expect(w.isInFolder('Atlas/Sources/paper.md', 'Atlas/Sources/')).toBe(true);
+  });
+  it('does not match a folder with same prefix but different name', () => {
+    const w = makeWatcher();
+    expect(w.isInFolder('Atlas/SourcesExtra/file.md', 'Atlas/Sources')).toBe(false);
+  });
+});
+
+describe('VaultWatcher.hasTag', () => {
+  it('matches tag without # prefix', () => {
+    const w = makeWatcher();
+    expect(w.hasTag(['cards/atom'], 'cards/atom')).toBe(true);
+  });
+  it('matches tag stored with # prefix', () => {
+    const w = makeWatcher();
+    expect(w.hasTag(['#cards/atom'], 'cards/atom')).toBe(true);
+  });
+  it('returns false for missing tag', () => {
+    const w = makeWatcher();
+    expect(w.hasTag(['cards/paper'], 'cards/atom')).toBe(false);
+  });
+  it('returns false for undefined tags', () => {
+    const w = makeWatcher();
+    expect(w.hasTag(undefined, 'cards/atom')).toBe(false);
+  });
+});
+
+describe('VaultWatcher.isSummaryFile', () => {
+  it('returns true for summary_ files', () => {
+    const w = makeWatcher();
+    expect(w.isSummaryFile('summary_Smith2023.md')).toBe(true);
+  });
+  it('returns false for regular files', () => {
+    const w = makeWatcher();
+    expect(w.isSummaryFile('Smith2023.md')).toBe(false);
+  });
+});
+
+describe('VaultWatcher.shouldAwardDevelopmentXP', () => {
+  const base: FileSnapshot = { wordCount: 100, linkCount: 2, keywords: [], peakWordCount: 100 };
+
+  it('awards XP when word growth exceeds threshold (50 words)', () => {
+    const w = makeWatcher();
+    expect(w.shouldAwardDevelopmentXP(base, 155, 2)).toBe(true); // +55 >= 50
+  });
+  it('awards XP when link count increases by 1', () => {
+    const w = makeWatcher();
+    expect(w.shouldAwardDevelopmentXP(base, 100, 3)).toBe(true);
+  });
+  it('does not award when word growth is below threshold', () => {
+    const w = makeWatcher();
+    expect(w.shouldAwardDevelopmentXP(base, 140, 2)).toBe(false); // +40 < 50
+  });
+  it('respects cooldown — does not award if last award was recent', () => {
+    const w = makeWatcher();
+    const snap = { ...base, lastDevelopmentAt: Date.now() - 1000 }; // 1 second ago
+    expect(w.shouldAwardDevelopmentXP(snap, 200, 5)).toBe(false);
+  });
+  it('awards again after cooldown expires', () => {
+    const w = makeWatcher();
+    const cooldownMs = DEFAULT_SETTINGS.atomicDevelopmentCooldownMinutes * 60 * 1000;
+    const snap = { ...base, lastDevelopmentAt: Date.now() - cooldownMs - 1000 };
+    expect(w.shouldAwardDevelopmentXP(snap, 200, 5)).toBe(true);
+  });
+});
+
+describe('VaultWatcher.writingProgressXP', () => {
+  it('returns 0 when word count is below peak', () => {
+    const w = makeWatcher();
+    expect(w.writingProgressXP(500, 490)).toBe(0);
+  });
+  it('returns 0 when equal to peak', () => {
+    const w = makeWatcher();
+    expect(w.writingProgressXP(500, 500)).toBe(0);
+  });
+  it('returns xpWritingProgressPer100Words for exactly 100 new words', () => {
+    const w = makeWatcher();
+    expect(w.writingProgressXP(500, 600)).toBe(10);
+  });
+  it('returns 2× for 250 new words (2 full thresholds)', () => {
+    const w = makeWatcher();
+    expect(w.writingProgressXP(500, 750)).toBe(20);
+  });
+  it('floors partial threshold progress', () => {
+    const w = makeWatcher();
+    expect(w.writingProgressXP(500, 650)).toBe(10); // 150 words = 1 full threshold
+  });
+});
