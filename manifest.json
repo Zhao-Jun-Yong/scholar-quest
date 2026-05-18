@@ -1,0 +1,10 @@
+{
+  "id": "scholar-quest",
+  "name": "Scholar Quest",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "Gamify your academic workflow with XP and levels.",
+  "author": "yangshaojun",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}
