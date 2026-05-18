@@ -1,0 +1,81 @@
+export type ActivityType =
+  | 'paper-skimmed'
+  | 'paper-completed'
+  | 'atomic-note-created'
+  | 'atomic-note-developed'
+  | 'writing-progress'
+  | 'milestone-completed'
+  | 'manual-log';
+
+export interface ActivityEntry {
+  timestamp: number;
+  type: ActivityType;
+  xp: number;
+  label: string;
+  filePath?: string;
+}
+
+export interface FileSnapshot {
+  wordCount: number;
+  linkCount: number;
+  keywords: string[];
+  peakWordCount: number;
+  lastDevelopmentAt?: number;
+}
+
+export interface MilestoneItem {
+  name: string;
+  xp: number;
+  completedAt?: number;
+}
+
+export interface MilestoneRecord {
+  projectType: string;
+  filePath: string;
+  milestones: MilestoneItem[];
+}
+
+export interface ManualActivity {
+  name: string;
+  xp: number;
+}
+
+export interface MilestoneTemplate {
+  name: string;
+  xp: number;
+}
+
+export interface ProjectTemplate {
+  milestones: MilestoneTemplate[];
+}
+
+export interface XPSettings {
+  sourcesFolder: string;
+  ideasFolder: string;
+  projectsFolder: string;
+  atomTag: string;
+  projectTags: Record<string, string>;
+  xpPaperSkimmed: number;
+  xpPaperCompleted: number;
+  xpAtomicNoteCreated: number;
+  xpAtomicNoteDeveloped: number;
+  xpWritingProgressPer100Words: number;
+  writingProgressWordThreshold: number;
+  atomicDevelopmentWordThreshold: number;
+  atomicDevelopmentCooldownMinutes: number;
+  projectTemplates: Record<string, ProjectTemplate>;
+  builtinActivities: ManualActivity[];
+  customActivities: ManualActivity[];
+  tierNames: [string, string, string, string, string];
+  statusBarIcon: string;
+}
+
+export interface PluginData {
+  totalXP: number;
+  level: number;
+  activities: ActivityEntry[];
+  snapshots: Record<string, FileSnapshot>;
+  milestones: Record<string, MilestoneRecord>;
+  todayXP: number;
+  todayDate: string;
+}
