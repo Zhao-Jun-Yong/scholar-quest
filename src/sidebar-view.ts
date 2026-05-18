@@ -1,5 +1,5 @@
 import { ItemView, WorkspaceLeaf } from 'obsidian';
-import { TIER_ICONS, TIER_LEVEL_RANGES } from './constants';
+import { ACHIEVEMENTS, TIER_ICONS, TIER_LEVEL_RANGES } from './constants';
 import type ScholarQuestPlugin from './main';
 
 export const SIDEBAR_VIEW_TYPE = 'scholar-quest-sidebar';
@@ -96,6 +96,9 @@ export class SidebarView extends ItemView {
       }
     }
 
+    // Achievements
+    this.renderAchievements(el, data);
+
     // Active projects
     const projects = engine.getAllProjectsWithPendingMilestones();
     if (projects.length === 0) return;
@@ -119,6 +122,48 @@ export class SidebarView extends ItemView {
       if (proj.pending.length > 5) {
         projEl.createDiv({ text: `  +${proj.pending.length - 5} more…` })
           .style.cssText = 'font-size: 0.78em; color: var(--text-faint); padding-left: 10px;';
+      }
+    }
+  }
+
+  private renderAchievements(el: HTMLElement, data: ReturnType<typeof this.plugin.engine.getData>): void {
+    const unlocked = ACHIEVEMENTS.filter(a => a.id in data.unlockedAchievements);
+    const locked = ACHIEVEMENTS.filter(a => !(a.id in data.unlockedAchievements));
+
+    this.sectionHeading(el, `Achievements (${unlocked.length} / ${ACHIEVEMENTS.length})`);
+
+    if (unlocked.length === 0) {
+      el.createDiv({ text: 'No achievements yet — keep going!' })
+        .style.cssText = 'color: var(--text-faint); font-size: 0.82em; margin-bottom: 8px;';
+    } else {
+      const grid = el.createDiv();
+      grid.style.cssText = 'display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;';
+      for (const ach of unlocked) {
+        const chip = grid.createDiv();
+        chip.style.cssText = 'display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: var(--background-secondary); border-radius: 12px; font-size: 0.8em;';
+        chip.setAttribute('aria-label', `${ach.name}: ${ach.description}`);
+        chip.setAttribute('data-tooltip-position', 'top');
+        chip.createSpan({ text: ach.icon });
+        chip.createSpan({ text: ach.name });
+      }
+    }
+
+    if (locked.length > 0) {
+      const details = el.createEl('details');
+      details.style.cssText = 'margin-bottom: 12px;';
+      const summary = details.createEl('summary');
+      summary.style.cssText = 'color: var(--text-faint); font-size: 0.78em; cursor: pointer;';
+      summary.setText(`${locked.length} locked`);
+
+      const grid = details.createDiv();
+      grid.style.cssText = 'display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;';
+      for (const ach of locked) {
+        const chip = grid.createDiv();
+        chip.style.cssText = 'display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: var(--background-secondary); border-radius: 12px; font-size: 0.8em; opacity: 0.4;';
+        chip.setAttribute('aria-label', ach.description);
+        chip.setAttribute('data-tooltip-position', 'top');
+        chip.createSpan({ text: ach.icon });
+        chip.createSpan({ text: ach.name });
       }
     }
   }
