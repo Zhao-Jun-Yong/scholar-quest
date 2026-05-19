@@ -123,7 +123,9 @@ export class XPEngine {
         filePath: r.filePath,
         projectType: r.projectType,
         pending: r.milestones.filter(m => !m.completedAt),
+        lastActive: Math.max(0, ...r.milestones.filter(m => m.completedAt).map(m => m.completedAt!)),
       }))
-      .filter(r => r.pending.length > 0);
+      .filter(r => r.pending.length > 0)
+      .sort((a, b) => b.lastActive - a.lastActive);
   }
 }
