@@ -1,5 +1,6 @@
 # Scholar Quest
 
+[![DOI](https://zenodo.org/badge/1204679331.svg)](https://doi.org/10.5281/zenodo.19467725)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-zhaojun0425-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/zhaojun0425)
 
 An [Obsidian](https://obsidian.md) plugin that gamifies academic work with XP, levels, and milestone tracking.
@@ -149,7 +150,7 @@ If you use Scholar Quest in your work, please cite it:
 
 ```
 Yong, Z.-J. (2026). Scholar Quest: Gamify your academic workflow with XP and levels (v0.2.0).
-https://github.com/Zhao-Jun-Yong/scholar-quest
+https://doi.org/10.5281/zenodo.19467725
 ```
 
 A `CITATION.cff` file is included for automated citation tools (GitHub, Zotero, Zenodo).
