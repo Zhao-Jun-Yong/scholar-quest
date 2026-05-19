@@ -29,6 +29,22 @@ An [Obsidian](https://obsidian.md) plugin that gamifies academic work with XP, l
 
 The plugin tracks your vault activity automatically. No manual XP logging required for core activities.
 
+## Recommended Workflow
+
+Scholar Quest is designed around a common academic Obsidian setup:
+
+- **Paper notes** in a sources folder (`Atlas/Sources/` by default), with a `keywords` frontmatter field tracking reading status via emoji (`📥 → 👀 → ✅`). The plugin reads these emoji to award XP automatically.
+- **Atomic notes** in an ideas folder (`Atlas/Ideas/` by default), tagged with a card tag (`cards/atom` by default). Each note captures a single idea or concept.
+- **Project notes** in a projects folder (`Efforts/` by default), tagged by project type (e.g. `project/manuscript`). The plugin reads these to initialise milestone tracking.
+
+You don't need to follow this structure exactly — all paths and tags are configurable in Settings → Scholar Quest.
+
+**New to this workflow?** These are good starting points:
+
+- [Obsidian](https://obsidian.md) — the note-taking app this plugin runs on
+- [Zettelkasten method](https://zettelkasten.de) — the atomic note-taking approach the ideas folder is built around
+- [Zotero](https://zotero.org) — reference manager; pair with the [Zotero Integration](https://github.com/mgmeyers/obsidian-zotero-integration) plugin to import paper notes directly into Obsidian
+
 ## XP Sources
 
 | Activity | XP | How |
