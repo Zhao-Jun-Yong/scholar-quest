@@ -14,114 +14,138 @@ export class ScholarQuestSettings extends PluginSettingTab {
     await this.plugin.savePluginData();
   }
 
+  private section(el: HTMLElement, title: string, desc?: string): void {
+    el.createEl('h3', { text: title });
+    if (desc) el.createEl('p', { text: desc, cls: 'setting-item-description' });
+  }
+
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
     containerEl.createEl('h2', { text: 'Scholar Quest' });
 
-    // Vault Paths
-    containerEl.createEl('h3', { text: 'Vault Paths' });
-    this.addTextSetting(containerEl, 'Sources folder', 'Folder containing source notes (papers, lectures)', 'sourcesFolder');
-    this.addTextSetting(containerEl, 'Ideas folder', 'Folder containing atomic notes', 'ideasFolder');
-    this.addTextSetting(containerEl, 'Projects folder', 'Folder containing project files', 'projectsFolder');
+    // ── Vault Setup ──────────────────────────────────────────────────────────
+    this.section(containerEl, 'Vault Setup',
+      'Tell Scholar Quest where your notes live. Changes take effect immediately.');
 
-    // Tags
-    containerEl.createEl('h3', { text: 'Tags' });
-    this.addTextSetting(containerEl, 'Atomic note tag', 'Tag identifying atomic notes', 'atomTag');
+    this.addTextSetting(containerEl, 'Sources folder', 'Papers, lectures, and other source notes', 'sourcesFolder');
+    this.addTextSetting(containerEl, 'Ideas folder', 'Atomic / permanent notes', 'ideasFolder');
+    this.addTextSetting(containerEl, 'Projects folder', 'Project files tracked for milestones', 'projectsFolder');
+    this.addTextSetting(containerEl, 'Atomic note tag', 'Tag that identifies an atomic note', 'atomTag');
+
+    // Project tags — collapsible to reduce noise
+    const tagDetails = containerEl.createEl('details');
+    tagDetails.style.cssText = 'margin: 4px 0 12px; padding: 0 12px 8px; background: var(--background-secondary); border-radius: 6px;';
+    const tagCount = Object.keys(this.plugin.settings.projectTags).length;
+    const tagSummary = tagDetails.createEl('summary');
+    tagSummary.style.cssText = 'padding: 10px 0; cursor: pointer; font-weight: 500; color: var(--text-muted);';
+    tagSummary.setText(`Project tags  (${tagCount} types — expand to edit)`);
+
     for (const [type, tag] of Object.entries(this.plugin.settings.projectTags)) {
-      new Setting(containerEl)
-        .setName(`${type} tag`)
+      new Setting(tagDetails)
+        .setName(type)
         .addText(t => t.setValue(tag).onChange(async v => {
           this.plugin.settings.projectTags[type] = v;
           await this.save();
         }));
     }
 
-    // Manual Activities
-    containerEl.createEl('h3', { text: 'Manual Log Activities' });
-    containerEl.createEl('p', {
-      text: `Activities for work done outside Obsidian. Max ${MAX_MANUAL_ACTIVITY_XP} XP per activity. Each activity can only be logged once per day.`,
-      cls: 'setting-item-description',
-    });
+    // ── Manual Log Activities ────────────────────────────────────────────────
+    this.section(containerEl, 'Manual Log Activities',
+      `For academic work done outside Obsidian. Max ${MAX_MANUAL_ACTIVITY_XP} XP per activity · once per day per activity.`);
+
     for (const activity of this.plugin.settings.manualActivities) {
       new Setting(containerEl)
-        .addText(t => t.setPlaceholder('Activity name').setValue(activity.name).onChange(async v => {
-          activity.name = v; await this.save();
-        }))
+        .setName(activity.name)
+        .addText(t => {
+          t.setPlaceholder('Activity name').setValue(activity.name);
+          t.inputEl.style.width = '180px';
+          t.onChange(async v => { activity.name = v; await this.save(); });
+        })
         .addText(t => {
           t.setPlaceholder('XP').setValue(String(activity.xp));
           t.inputEl.type = 'number';
           t.inputEl.min = '1';
           t.inputEl.max = String(MAX_MANUAL_ACTIVITY_XP);
+          t.inputEl.style.width = '60px';
           t.onChange(async v => {
             const n = Math.min(parseInt(v) || 1, MAX_MANUAL_ACTIVITY_XP);
             activity.xp = n; await this.save();
           });
         })
-        .addButton(b => b.setButtonText('Remove').onClick(async () => {
-          this.plugin.settings.manualActivities =
-            this.plugin.settings.manualActivities.filter(a => a !== activity);
+        .addExtraButton(b => b
+          .setIcon('trash')
+          .setTooltip('Remove activity')
+          .onClick(async () => {
+            this.plugin.settings.manualActivities =
+              this.plugin.settings.manualActivities.filter(a => a !== activity);
+            await this.save();
+            this.display();
+          }));
+    }
+
+    new Setting(containerEl)
+      .addButton(b => b
+        .setButtonText('+ Add activity')
+        .onClick(async () => {
+          this.plugin.settings.manualActivities.push({ name: 'New activity', xp: 40 });
           await this.save();
           this.display();
         }));
-    }
-    new Setting(containerEl).addButton(b => b.setButtonText('Add activity').onClick(async () => {
-      this.plugin.settings.manualActivities.push({ name: 'New activity', xp: 40 });
-      await this.save();
-      this.display();
-    }));
 
-    // Milestone Templates
-    containerEl.createEl('h3', { text: 'Milestone Templates' });
-    containerEl.createEl('p', {
-      text: `Customise milestone names and XP values per project type. XP is capped at ${MAX_MILESTONE_XP}.`,
-      cls: 'setting-item-description',
-    });
+    // ── Milestone Templates ──────────────────────────────────────────────────
+    this.section(containerEl, 'Milestone Templates',
+      `Customise milestones per project type. XP is capped at ${MAX_MILESTONE_XP}.`);
+
     for (const [type, template] of Object.entries(this.plugin.settings.projectTemplates)) {
       const details = containerEl.createEl('details');
-      details.createEl('summary').setText(type);
+      details.style.cssText = 'margin: 4px 0; padding: 0 12px 8px; background: var(--background-secondary); border-radius: 6px;';
+
+      const summary = details.createEl('summary');
+      summary.style.cssText = 'padding: 10px 0; cursor: pointer; font-weight: 500;';
+      summary.setText(`${type}  (${template.milestones.length} milestones)`);
 
       for (const milestone of template.milestones) {
-        const row = details.createEl('div');
-        Object.assign(row.style, { display: 'flex', gap: '8px', marginBottom: '4px' });
-
-        const nameInput = row.createEl('input');
-        nameInput.type = 'text';
-        nameInput.value = milestone.name;
-        nameInput.style.flex = '1';
-        nameInput.onchange = async () => { milestone.name = nameInput.value; await this.save(); };
-
-        const xpInput = row.createEl('input');
-        xpInput.type = 'number';
-        xpInput.value = String(milestone.xp);
-        xpInput.min = '1';
-        xpInput.max = String(MAX_MILESTONE_XP);
-        xpInput.style.width = '60px';
-        xpInput.onchange = async () => {
-          const n = Math.min(parseInt(xpInput.value) || 1, MAX_MILESTONE_XP);
-          milestone.xp = n; await this.save();
-        };
-
-        const removeBtn = row.createEl('button');
-        removeBtn.setText('×');
-        removeBtn.onclick = async () => {
-          template.milestones = template.milestones.filter(m => m !== milestone);
-          await this.save();
-          this.display();
-        };
+        const row = new Setting(details)
+          .addText(t => {
+            t.setPlaceholder('Milestone name').setValue(milestone.name);
+            t.inputEl.style.flex = '1';
+            t.onChange(async v => { milestone.name = v; await this.save(); });
+          })
+          .addText(t => {
+            t.setPlaceholder('XP').setValue(String(milestone.xp));
+            t.inputEl.type = 'number';
+            t.inputEl.min = '1';
+            t.inputEl.max = String(MAX_MILESTONE_XP);
+            t.inputEl.style.width = '60px';
+            t.onChange(async v => {
+              const n = Math.min(parseInt(v) || 1, MAX_MILESTONE_XP);
+              milestone.xp = n; await this.save();
+            });
+          })
+          .addExtraButton(b => b
+            .setIcon('trash')
+            .setTooltip('Remove milestone')
+            .onClick(async () => {
+              template.milestones = template.milestones.filter(m => m !== milestone);
+              await this.save();
+              this.display();
+            }));
+        row.settingEl.style.borderTop = 'none';
       }
 
-      const addBtn = details.createEl('button');
-      addBtn.setText('+ Add milestone');
-      addBtn.style.marginRight = '8px';
+      const controls = details.createEl('div');
+      controls.style.cssText = 'display: flex; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--background-modifier-border);';
+
+      const addBtn = controls.createEl('button', { text: '+ Add milestone' });
       addBtn.onclick = async () => {
         template.milestones.push({ name: 'New milestone', xp: 50 });
         await this.save();
         this.display();
       };
 
-      const resetBtn = details.createEl('button');
-      resetBtn.setText('Reset to defaults');
+      const resetBtn = controls.createEl('button', { text: 'Reset to defaults' });
+      resetBtn.style.color = 'var(--text-muted)';
       resetBtn.onclick = async () => {
         const defaults = DEFAULT_MILESTONE_TEMPLATES[type];
         if (defaults) {
@@ -132,11 +156,12 @@ export class ScholarQuestSettings extends PluginSettingTab {
       };
     }
 
-    // Danger Zone
-    containerEl.createEl('h3', { text: 'Danger Zone' });
+    // ── Danger Zone ──────────────────────────────────────────────────────────
+    this.section(containerEl, 'Danger Zone');
+
     new Setting(containerEl)
       .setName('Clear activity log')
-      .setDesc('Remove all entries from the activity log. XP and level are kept.')
+      .setDesc('Remove all log entries. XP and level are kept.')
       .addButton(b => b.setButtonText('Clear log').setWarning().onClick(async () => {
         if (window.confirm('Clear all activity log entries? XP and level will not change.')) {
           this.plugin.pluginData.activities = [];
@@ -147,7 +172,7 @@ export class ScholarQuestSettings extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Reset all progress')
-      .setDesc('Reset XP, level, and activity log to zero. Milestone records are kept.')
+      .setDesc('Reset XP, level, activity log, and achievements to zero.')
       .addButton(b => b.setButtonText('Reset progress').setWarning().onClick(async () => {
         if (window.confirm('Reset all XP, level, and activity log? This cannot be undone.')) {
           this.plugin.pluginData.totalXP = 0;
