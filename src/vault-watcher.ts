@@ -9,6 +9,7 @@ export class VaultWatcher {
   private vault: Vault;
   private metadataCache: MetadataCache;
   private loadedAt: number;
+  onUpdate?: () => void;
 
   constructor(engine: XPEngine, settings: XPSettings, vault: Vault, metadataCache: MetadataCache) {
     this.engine = engine;
@@ -168,15 +169,34 @@ export class VaultWatcher {
       if (xp > 0) {
         await this.engine.awardXP(xp, 'writing-progress', `Writing: ${file.basename}`, file.path);
       }
+
+      // Daily session bonus: 50 XP once per file per day when 500+ words above daily start
+      const today = this.engine.getTodayDate();
+      if (snapshot.dailyWritingDate !== today) {
+        snapshot.dailyWritingDate = today;
+        snapshot.dailyWritingStart = snapshot.wordCount;
+        snapshot.writingBonusAwarded = false;
+      }
+      const dailyProgress = newWordCount - (snapshot.dailyWritingStart ?? newWordCount);
+      const bonusThreshold = this.settings.writingSessionBonusThreshold ?? 500;
+      const bonusXP = this.settings.xpWritingSessionBonus ?? 50;
+      if (!snapshot.writingBonusAwarded && dailyProgress >= bonusThreshold) {
+        await this.engine.awardXP(bonusXP, 'writing-progress', `Writing session bonus: ${file.basename}`, file.path);
+        snapshot.writingBonusAwarded = true;
+      }
     }
 
-    // Update snapshot
+    // Update snapshot — preserve daily writing fields set above
+    this.onUpdate?.();
     data.snapshots[file.path] = {
       wordCount: newWordCount,
       linkCount: newLinkCount,
       keywords: newKeywords,
       peakWordCount: Math.max(snapshot?.peakWordCount ?? 0, newWordCount),
       lastDevelopmentAt: snapshot?.lastDevelopmentAt,
+      dailyWritingDate: snapshot?.dailyWritingDate,
+      dailyWritingStart: snapshot?.dailyWritingStart,
+      writingBonusAwarded: snapshot?.writingBonusAwarded,
     };
   }
 }

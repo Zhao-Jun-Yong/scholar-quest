@@ -15,34 +15,34 @@ const makeData = (): PluginData => ({
 const makeSave = () => jest.fn().mockResolvedValue(undefined);
 
 describe('XPEngine.getTierIndex', () => {
-  it('returns 0 for levels 1–4', () => {
+  it('returns 0 for levels 1–5', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
     expect(e.getTierIndex(1)).toBe(0);
-    expect(e.getTierIndex(4)).toBe(0);
+    expect(e.getTierIndex(5)).toBe(0);
   });
-  it('returns 1 for levels 5–8', () => {
+  it('returns 1 for levels 6–10', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
-    expect(e.getTierIndex(5)).toBe(1);
-    expect(e.getTierIndex(8)).toBe(1);
+    expect(e.getTierIndex(6)).toBe(1);
+    expect(e.getTierIndex(10)).toBe(1);
   });
-  it('returns 6 for level 25', () => {
+  it('returns 5 for level 28', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
-    expect(e.getTierIndex(25)).toBe(6);
+    expect(e.getTierIndex(28)).toBe(5);
   });
 });
 
 describe('XPEngine.getTierName', () => {
-  it('returns Hatchling for level 1', () => {
+  it('returns Dormant for level 1', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
-    expect(e.getTierName(1)).toBe('Hatchling');
+    expect(e.getTierName(1)).toBe('Dormant');
   });
-  it('returns Flare for level 21', () => {
+  it('returns Wisp for level 21', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
-    expect(e.getTierName(21)).toBe('Flare');
+    expect(e.getTierName(21)).toBe('Wisp');
   });
-  it('returns Nova for level 45', () => {
+  it('returns Drake for level 45', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
-    expect(e.getTierName(45)).toBe('Nova');
+    expect(e.getTierName(45)).toBe('Drake');
   });
 });
 
@@ -51,9 +51,15 @@ describe('XPEngine.xpToNextLevel', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
     expect(e.xpToNextLevel(1)).toBe(300);
   });
-  it('returns 300 * N for level N', () => {
+  it('returns 300 * N for levels below 20', () => {
     const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
     expect(e.xpToNextLevel(7)).toBe(2100);
+  });
+  it('caps at 6000 for levels 20 and above', () => {
+    const e = new XPEngine(makeData(), DEFAULT_SETTINGS, makeSave());
+    expect(e.xpToNextLevel(20)).toBe(6000);
+    expect(e.xpToNextLevel(30)).toBe(6000);
+    expect(e.xpToNextLevel(60)).toBe(6000);
   });
 });
 
@@ -76,11 +82,19 @@ describe('XPEngine.recalculateLevel', () => {
     e.recalculateLevel();
     expect(data.level).toBe(3);
   });
-  it('caps at level 48', () => {
+  it('caps at level 60 with massive XP (new flat cap curve)', () => {
+    // Total XP to max = sum(300*1..20) + 40*6000 = 63000 + 240000 = 303000
     const data = { ...makeData(), totalXP: 9_999_999 };
     const e = new XPEngine(data, DEFAULT_SETTINGS, makeSave());
     e.recalculateLevel();
-    expect(data.level).toBe(48);
+    expect(data.level).toBe(60);
+  });
+  it('reaches level 21 with 63000 XP (start of flat zone)', () => {
+    // 63000 = sum of 300*1..20
+    const data = { ...makeData(), totalXP: 63000 };
+    const e = new XPEngine(data, DEFAULT_SETTINGS, makeSave());
+    e.recalculateLevel();
+    expect(data.level).toBe(21);
   });
 });
 

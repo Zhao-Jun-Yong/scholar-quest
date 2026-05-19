@@ -156,6 +156,22 @@ export class ScholarQuestSettings extends PluginSettingTab {
       };
     }
 
+    // ── XP Values ────────────────────────────────────────────────────────────
+    const xpDetails = containerEl.createEl('details');
+    xpDetails.style.cssText = 'margin: 4px 0 16px; padding: 0 12px 8px; background: var(--background-secondary); border-radius: 6px;';
+    const xpSummary = xpDetails.createEl('summary');
+    xpSummary.style.cssText = 'padding: 10px 0; cursor: pointer; font-weight: 500; color: var(--text-muted);';
+    xpSummary.setText('XP Values  (expand to edit)');
+
+    this.addNumberSetting(xpDetails, 'Paper skimmed', 'XP per paper skimmed', 'xpPaperSkimmed');
+    this.addNumberSetting(xpDetails, 'Paper completed', 'XP per paper fully read', 'xpPaperCompleted');
+    this.addNumberSetting(xpDetails, 'Atomic note created', 'XP for creating a new atomic note', 'xpAtomicNoteCreated');
+    this.addNumberSetting(xpDetails, 'Atomic note developed', 'XP each time a note is significantly developed', 'xpAtomicNoteDeveloped');
+    this.addNumberSetting(xpDetails, 'Writing progress (per 100 words)', 'XP awarded per 100 net new words', 'xpWritingProgressPer100Words');
+    this.addNumberSetting(xpDetails, 'Writing session bonus', 'Bonus XP for writing a lot in one day', 'xpWritingSessionBonus');
+    this.addNumberSetting(xpDetails, 'Writing session bonus threshold (words)', 'Net new words needed to trigger the bonus', 'writingSessionBonusThreshold');
+    this.addNumberSetting(xpDetails, 'Daily presence', 'XP for opening Obsidian each day', 'xpDailyPresence');
+
     // ── Danger Zone ──────────────────────────────────────────────────────────
     this.section(containerEl, 'Danger Zone');
 
@@ -193,5 +209,21 @@ export class ScholarQuestSettings extends PluginSettingTab {
       t.setValue((this.plugin.settings as any)[key]).onChange(async v => {
         (this.plugin.settings as any)[key] = v; await this.save();
       }));
+  }
+
+  private addNumberSetting(el: HTMLElement, name: string, desc: string, key: string): void {
+    new Setting(el).setName(name).setDesc(desc).addText(t => {
+      t.inputEl.type = 'number';
+      t.inputEl.min = '0';
+      t.inputEl.style.width = '70px';
+      t.setValue(String((this.plugin.settings as any)[key] ?? 0));
+      t.onChange(async v => {
+        const n = parseInt(v);
+        if (!isNaN(n) && n >= 0) {
+          (this.plugin.settings as any)[key] = n;
+          await this.save();
+        }
+      });
+    });
   }
 }

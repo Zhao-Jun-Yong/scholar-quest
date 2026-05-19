@@ -1,0 +1,53 @@
+# Changelog
+
+## [1.0.0] — 2026-05-19
+
+### New features
+- **Daily streak** — consecutive days opening Obsidian tracked and displayed with a pixel art flame icon in the sidebar (shows from day 2 onward)
+- **Writing session bonus** — one-time daily XP bonus (+50) when you write 500+ net new words in a manuscript file
+- **Daily presence** — small XP reward (+5) for opening Obsidian each day
+- **Word count progress** — live sidebar display showing words written today and progress toward the session bonus threshold; updates as you type
+- **Sidebar auto-refresh** — sidebar now updates automatically after every file edit, not just on open
+- **XP settings section** — all XP values (writing rate, session bonus, daily presence, etc.) now editable in Settings → Scholar Quest
+- **Activity grouping** — consecutive writing-progress entries for the same file are merged in the activity feed to reduce noise
+
+### Achievements
+- 10 new achievements added (7 career milestone + 3 late-career stretch), all with PixelLab pixel art icons:
+  - **Established** (50,000 XP), **Well-Cited** (100,000 XP), **Distinguished** (175,000 XP), **Eminent** (260,000 XP)
+  - **Deep Thinker** (200 notes developed), **Marathon Writer** (250 writing sessions), **Milestone Chaser** (25 milestones)
+  - **Grand Zettelkasten** (500 notes developed), **Endless Writer** (500 writing sessions), **Project Veteran** (100 milestones)
+- Achievement unlock notifications no longer display raw icon data
+
+### Balance changes
+- Writing XP doubled: 10 → 20 XP per 100 net new words
+- XP curve flattened: cap introduced at 6,000 XP/level from level 20 onward (previously unbounded linear)
+  - Total XP to max level: ~303,000 (down from ~549,000)
+  - Active researcher reaches max level around year 10
+
+### Bug fixes
+- **Daily presence double-award** — presence XP could be awarded twice if the plugin reloaded mid-save; fixed by persisting the guard date before awarding XP
+- **Writing snapshot fields lost** — `dailyWritingDate`, `dailyWritingStart`, and `writingBonusAwarded` were being discarded on every file edit; these are now preserved correctly
+- **Onboarding level preview capped at 25** — career import preview now correctly previews up to level 60
+
+### UI
+- Level pips (5-dot tier indicator) removed from sidebar
+- Sidebar header spacing tightened
+
+---
+
+## [0.3.0] — 2026-05-15
+
+- Project archive/unarchive in sidebar
+- Achievements panel with locked/unlocked chips
+- Status bar with pixel art scroll icon
+- Manual activity logger
+
+## [0.2.0] — 2026-04-20
+
+- Milestone system with 14 project types
+- Career calibration onboarding wizard
+- Tier avatar progression (12 tiers)
+
+## [0.1.0] — 2026-03-10
+
+- Initial release: XP engine, sidebar, atomic note and paper tracking

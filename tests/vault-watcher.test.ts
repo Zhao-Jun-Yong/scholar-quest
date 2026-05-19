@@ -168,14 +168,14 @@ describe('VaultWatcher.writingProgressXP', () => {
   });
   it('returns xpWritingProgressPer100Words for exactly 100 new words', () => {
     const w = makeWatcher();
-    expect(w.writingProgressXP(500, 600)).toBe(10);
+    expect(w.writingProgressXP(500, 600)).toBe(20); // rate is now 20 XP per 100 words
   });
   it('returns 2× for 250 new words (2 full thresholds)', () => {
     const w = makeWatcher();
-    expect(w.writingProgressXP(500, 750)).toBe(20);
+    expect(w.writingProgressXP(500, 750)).toBe(40); // 2 * 20 XP
   });
   it('floors partial threshold progress', () => {
     const w = makeWatcher();
-    expect(w.writingProgressXP(500, 650)).toBe(10); // 150 words = 1 full threshold
+    expect(w.writingProgressXP(500, 650)).toBe(20); // 150 words = 1 full threshold * 20 XP
   });
 });

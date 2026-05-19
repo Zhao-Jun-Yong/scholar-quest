@@ -60,8 +60,8 @@ export class OnboardingModal extends Modal {
   private calcLevel(xp: number): number {
     let remaining = xp;
     let level = 1;
-    while (level < 25) {
-      const needed = 300 * level;
+    while (level < 60) {
+      const needed = this.engine.xpToNextLevel(level);
       if (remaining < needed) break;
       remaining -= needed;
       level++;

@@ -30,11 +30,22 @@ export default class ScholarQuestPlugin extends Plugin {
   engine!: XPEngine;
   watcher!: VaultWatcher;
   statusBar!: StatusBar;
+  private initialSaveComplete = false;
 
   async onload(): Promise<void> {
     await this.loadPluginData();
 
     this.engine = new XPEngine(this.pluginData, this.settings, () => this.savePluginData());
+
+    // H1: Point-of-action XP toast. Skip career-init, milestone-completed (already noticed
+    // via sidebar click), manual-log (already noticed via ManualLogger), and writing-progress
+    // < 20 XP (sub-threshold increments accumulate silently).
+    this.engine.onXPAwarded = (xp, type, label) => {
+      const suppress = new Set<typeof type>(['career-init', 'milestone-completed', 'manual-log']);
+      if (suppress.has(type)) return;
+      if (type === 'writing-progress' && xp < 20) return;
+      new Notice(`+${xp} XP — ${label}`);
+    };
 
     this.watcher = new VaultWatcher(
       this.engine,
@@ -42,6 +53,7 @@ export default class ScholarQuestPlugin extends Plugin {
       this.app.vault,
       this.app.metadataCache
     );
+    this.watcher.onUpdate = () => this.refreshSidebar();
 
     const scrollSrc = this.app.vault.adapter.getResourcePath(
       normalizePath(`${this.manifest.dir}/assets/sprites/scroll-icon.png`)
@@ -107,6 +119,8 @@ export default class ScholarQuestPlugin extends Plugin {
       this.initProjectMilestones();
       if (!this.pluginData.hasOnboarded) {
         this.openOnboarding();
+      } else {
+        this.awardDailyPresence();
       }
     });
   }
@@ -140,8 +154,9 @@ export default class ScholarQuestPlugin extends Plugin {
       this.pluginData.hasOnboarded = true;
       await this.savePluginData();
       new Notice(`🎓 Starting at Level ${this.pluginData.level}.`);
+      await this.awardDailyPresence();
       for (const ach of newCareerAchs) {
-        new Notice(`${ach.icon} Achievement unlocked: ${ach.name} — ${ach.description}`, 6000);
+        new Notice(`🏆 Achievement unlocked: ${ach.name} — ${ach.description}`, 6000);
       }
     }).open();
   }
@@ -219,6 +234,8 @@ export default class ScholarQuestPlugin extends Plugin {
       hasOnboarded: saved?.hasOnboarded ?? ((saved?.activities?.length ?? 0) > 0),
       unlockedAchievements: saved?.unlockedAchievements ?? {},
       archivedProjects: saved?.archivedProjects ?? [],
+      lastPresenceDate: saved?.lastPresenceDate,
+      currentStreak: saved?.currentStreak ?? 0,
     };
 
     if (saved?.unlockedAchievements === undefined) {
@@ -238,9 +255,37 @@ export default class ScholarQuestPlugin extends Plugin {
     const newlyUnlocked = checkNewAchievements(this.pluginData, ACHIEVEMENTS);
     if (newlyUnlocked.length > 0) {
       await this.saveData({ settings: this.settings, ...this.pluginData });
-      for (const ach of newlyUnlocked) {
-        new Notice(`${ach.icon} Achievement unlocked: ${ach.name} — ${ach.description}`, 6000);
+      if (!this.initialSaveComplete && newlyUnlocked.length > 2) {
+        // Batch on first save to avoid flooding notices after an XP curve migration
+        new Notice(`🎉 ${newlyUnlocked.length} achievements unlocked!`, 4000);
+      } else {
+        for (const ach of newlyUnlocked) {
+          new Notice(`🏆 Achievement unlocked: ${ach.name} — ${ach.description}`, 6000);
+        }
       }
     }
+    this.initialSaveComplete = true;
+  }
+
+  private async awardDailyPresence(): Promise<void> {
+    const today = this.engine.getTodayDate();
+    if (this.pluginData.lastPresenceDate === today) return;
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    this.pluginData.currentStreak = this.pluginData.lastPresenceDate === yesterdayStr
+      ? (this.pluginData.currentStreak ?? 1) + 1
+      : 1;
+    this.pluginData.lastPresenceDate = today;
+    // Persist the guard immediately so a plugin reload mid-operation doesn't double-award.
+    await this.saveData({ settings: this.settings, ...this.pluginData });
+
+    await this.engine.awardXP(
+      this.settings.xpDailyPresence ?? 5,
+      'daily-presence',
+      'Daily presence'
+    );
   }
 }

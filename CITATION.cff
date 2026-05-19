@@ -5,7 +5,7 @@ authors:
   given-names: Zhao-Jun
   orcid: https://orcid.org/0009-0001-7718-4122
 title: "Scholar Quest: Gamify your academic workflow with XP and levels"
-version: v0.2.0
+version: v1.0.0
 date-released: 2026-05-19
 url: https://github.com/Zhao-Jun-Yong/scholar-quest
 doi: 10.5281/zenodo.19467725

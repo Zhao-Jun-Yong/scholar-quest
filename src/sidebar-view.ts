@@ -65,11 +65,51 @@ export class SidebarView extends ItemView {
     barFill.style.cssText = `width: ${pct}%; height: 100%; background: var(--interactive-accent); border-radius: 4px;`;
 
     el.createDiv({ text: `${xpEarned} / ${xpNeeded} XP to next level` })
-      .style.cssText = 'color: var(--text-faint); font-size: 0.78em; text-align: center; margin-bottom: 16px;';
+      .style.cssText = 'color: var(--text-faint); font-size: 0.78em; text-align: center; margin-bottom: 4px;';
 
-    // Recent activity
+    // Writing session bonus progress
+    const todayStr = engine.getTodayDate();
+    const bonusThreshold = settings.writingSessionBonusThreshold ?? 500;
+    const todayWords = Object.values(data.snapshots)
+      .filter(s => s.dailyWritingDate === todayStr)
+      .reduce((sum, s) => sum + Math.max(0, (s.wordCount ?? 0) - (s.dailyWritingStart ?? s.wordCount ?? 0)), 0);
+    const bonusAlreadyAwarded = Object.values(data.snapshots).some(s => s.dailyWritingDate === todayStr && s.writingBonusAwarded);
+    if (todayWords > 0) {
+      const wordsLeft = bonusThreshold - todayWords;
+      const bonusText = bonusAlreadyAwarded || wordsLeft <= 0
+        ? `${todayWords} words today · bonus ✓`
+        : `${todayWords} words today · ${wordsLeft} to bonus`;
+      el.createDiv({ text: bonusText })
+        .style.cssText = 'color: var(--text-faint); font-size: 0.75em; text-align: center; margin-bottom: 6px;';
+    } else {
+      el.createDiv().style.marginBottom = '6px';
+    }
+
+    // Streak
+    const streak = data.currentStreak ?? 0;
+    if (streak >= 2) {
+      const streakRow = el.createDiv();
+      streakRow.style.cssText = 'display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.82em; color: var(--text-muted); margin-bottom: 14px;';
+      const flameEl = streakRow.createDiv();
+      flameEl.style.cssText = 'width: 14px; height: 14px; flex-shrink: 0;';
+      flameEl.innerHTML = `<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABuUlEQVR4nO2VP0vDQBjGnzQdql6LRRdHN8HBuYuuLp0yl84OjvEjOJjNfoLi7OQixUUR3NwEwU9QsBhsqW1tcw75Q42Xe980kSL4QCnhLu/zy/vnDvjXH5fMGqCwTPOsAOg1K5lBMgFoJMEESwPwI6A58OBaIr4me80KOztpM5BL3RcBkMGXKqXIQu6SriVUdZWuJVRrv9IDKqjoIZYFI/jlC0ClWtWQuQLMm1zslgAApSb5ihZioRK4lkB9pxg9qyAO9g9lMIpacQGM9csBuenqeQoEtb+9u2YF1gGwO3nU9v8bT6PoXc7XUwB4qVdDEECRhYT6pzoPtADn4+3EzleZh2PpWgLmwMsMYLQ6j8oFXefPnw0b7XeAOA9YTUjNP2MUswGEEPH7oFhraSE4d4R2CnQXUBJEHISCYGVg5ajMhghBuGIByGE/ggiDx03j4kKQADNRgLHqm+syUay1lFAzobegrszoRBONNZh7p8R2X9OHY3hdEx/3khxFKgNGEADDzifLHADbnFyck3w72QQAlG1Hu7Hv2PC6E5Z5GgAgGKXxzVZiKfqOjerZa6rYaQC+geQcc3n6AihinAwinp+tAAAAAElFTkSuQmCC" width="14" height="14" style="image-rendering:pixelated;"/>`;
+      streakRow.createSpan({ text: `${streak}-day streak` });
+    } else {
+      el.createDiv().style.marginBottom = '14px';
+    }
+
+    // Recent activity — collapse consecutive writing-progress entries for the same file
     this.sectionHeading(el, 'Recent Activity');
-    const recent = data.activities.slice(0, 10);
+    const collapsed: typeof data.activities = [];
+    for (const act of data.activities) {
+      const prev = collapsed[collapsed.length - 1];
+      if (act.type === 'writing-progress' && prev?.type === 'writing-progress' && act.filePath === prev.filePath) {
+        prev.xp += act.xp;
+      } else {
+        collapsed.push({ ...act });
+      }
+    }
+    const recent = collapsed.slice(0, 10);
     if (recent.length === 0) {
       el.createDiv({ text: 'No activity yet.' }).style.color = 'var(--text-faint)';
     } else {
@@ -83,6 +123,18 @@ export class SidebarView extends ItemView {
         meta.style.cssText = 'color: var(--text-muted); white-space: nowrap; margin-left: 8px; flex-shrink: 0;';
         meta.createSpan({ text: `+${act.xp}` }).style.color = 'var(--color-green)';
         meta.createSpan({ text: ' · ' + timeAgo(act.timestamp) });
+      }
+
+      // L3: show which manual activities were already logged today
+      const todayStr = engine.getTodayDate();
+      const loggedToday = data.activities
+        .filter(a => a.type === 'manual-log' &&
+          new Date(a.timestamp).toISOString().split('T')[0] === todayStr)
+        .map(a => a.label);
+      if (loggedToday.length > 0) {
+        const note = el.createDiv();
+        note.style.cssText = 'color: var(--text-faint); font-size: 0.75em; margin-top: 4px; margin-bottom: 4px;';
+        note.setText(`Logged today: ${loggedToday.join(', ')}`);
       }
     }
 

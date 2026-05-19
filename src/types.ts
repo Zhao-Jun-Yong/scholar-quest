@@ -6,7 +6,8 @@ export type ActivityType =
   | 'writing-progress'
   | 'milestone-completed'
   | 'manual-log'
-  | 'career-init';
+  | 'career-init'
+  | 'daily-presence';
 
 export interface ActivityEntry {
   timestamp: number;
@@ -22,6 +23,9 @@ export interface FileSnapshot {
   keywords: string[];
   peakWordCount: number;
   lastDevelopmentAt?: number;
+  dailyWritingDate?: string;
+  dailyWritingStart?: number;
+  writingBonusAwarded?: boolean;
 }
 
 export interface MilestoneItem {
@@ -64,6 +68,9 @@ export interface XPSettings {
   writingProgressWordThreshold: number;
   atomicDevelopmentWordThreshold: number;
   atomicDevelopmentCooldownMinutes: number;
+  xpWritingSessionBonus: number;
+  writingSessionBonusThreshold: number;
+  xpDailyPresence: number;
   projectTemplates: Record<string, ProjectTemplate>;
   manualActivities: ManualActivity[];
   tierNames: string[];
@@ -95,4 +102,6 @@ export interface PluginData {
   hasOnboarded?: boolean;
   unlockedAchievements: Record<string, number>;
   archivedProjects: string[];
+  lastPresenceDate?: string;
+  currentStreak?: number;
 }

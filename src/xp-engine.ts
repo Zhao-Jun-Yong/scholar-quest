@@ -5,6 +5,7 @@ export class XPEngine {
   private data: PluginData;
   private settings: XPSettings;
   private saveCallback: () => Promise<void>;
+  onXPAwarded?: (xp: number, type: ActivityType, label: string) => void;
 
   constructor(data: PluginData, settings: XPSettings, saveCallback: () => Promise<void>) {
     this.data = data;
@@ -22,7 +23,7 @@ export class XPEngine {
   }
 
   xpToNextLevel(level: number): number {
-    return 300 * level;
+    return Math.min(300 * level, 6000);
   }
 
   recalculateLevel(): void {
@@ -62,6 +63,7 @@ export class XPEngine {
       this.data.activities.length = MAX_ACTIVITIES_LOG;
     }
 
+    this.onXPAwarded?.(xp, type, label);
     await this.saveCallback();
   }
 
