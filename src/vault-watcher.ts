@@ -31,8 +31,9 @@ export class VaultWatcher {
   }
 
   extractKeywords(frontmatter: Record<string, unknown> | null): string[] {
-    if (!frontmatter?.keywords) return [];
-    const kw = frontmatter.keywords;
+    const field = this.settings.readingStatusField;
+    if (!frontmatter?.[field]) return [];
+    const kw = frontmatter[field];
     if (Array.isArray(kw)) return kw.map(String);
     if (typeof kw === 'string') return [kw];
     return [];
@@ -87,7 +88,7 @@ export class VaultWatcher {
   async onFileCreate(file: TFile): Promise<void> {
     const data = this.engine.getData();
     const cache = this.metadataCache.getFileCache(file);
-    const rawTags = cache?.frontmatter?.tags;
+    const rawTags = cache?.frontmatter?.[this.settings.atomNoteTagField];
     const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
 
     // Only award XP for files genuinely created after this plugin session started.
@@ -122,8 +123,10 @@ export class VaultWatcher {
     const data = this.engine.getData();
     const cache = this.metadataCache.getFileCache(file);
     const frontmatter = (cache?.frontmatter as Record<string, unknown>) ?? null;
-    const rawTags2 = cache?.frontmatter?.tags;
-    const tags: string[] = Array.isArray(rawTags2) ? rawTags2 : [];
+    const rawAtomTags = cache?.frontmatter?.[this.settings.atomNoteTagField];
+    const atomTags: string[] = Array.isArray(rawAtomTags) ? rawAtomTags : [];
+    const rawProjectTags = cache?.frontmatter?.[this.settings.projectTagField];
+    const projectTags: string[] = Array.isArray(rawProjectTags) ? rawProjectTags : [];
     const newKeywords = this.extractKeywords(frontmatter);
     const snapshot = data.snapshots[file.path];
 
@@ -148,7 +151,7 @@ export class VaultWatcher {
     // Atomic note development
     if (
       this.isInFolder(file.path, this.settings.ideasFolder) &&
-      this.hasTag(tags, this.settings.atomTag) &&
+      this.hasTag(atomTags, this.settings.atomTag) &&
       snapshot
     ) {
       if (this.shouldAwardDevelopmentXP(snapshot, newWordCount, newLinkCount)) {
@@ -164,7 +167,7 @@ export class VaultWatcher {
 
     // Writing progress (manuscript files only)
     const manuscriptTag = this.settings.projectTags['manuscript'];
-    if (snapshot && this.hasTag(tags, manuscriptTag)) {
+    if (snapshot && this.hasTag(projectTags, manuscriptTag)) {
       const xp = this.writingProgressXP(snapshot.peakWordCount, newWordCount);
       if (xp > 0) {
         await this.engine.awardXP(xp, 'writing-progress', `Writing: ${file.basename}`, file.path);

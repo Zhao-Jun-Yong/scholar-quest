@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0] — 2026-05-19
+
+### New features
+- **Configurable frontmatter field names** — three new settings under Vault Setup:
+  - *Reading status field* — frontmatter property containing reading status emoji (`📥 👀 ✅`); default `keywords`
+  - *Atomic note tag field* — frontmatter property containing atomic note tags; default `tags`
+  - *Project tag field* — frontmatter property containing project type tags; default `tags`
+
+  Users with non-standard vault conventions (e.g. using `keywords` instead of `tags` for note classification) can now point the plugin to their actual field names without restructuring their vault.
+
+---
+
 ## [1.0.0] — 2026-05-19
 
 ### New features

@@ -201,6 +201,9 @@ export const DEFAULT_SETTINGS: XPSettings = {
   ideasFolder: 'Atlas/Ideas',
   projectsFolder: 'Efforts',
   atomTag: 'cards/atom',
+  readingStatusField: 'keywords',
+  atomNoteTagField: 'tags',
+  projectTagField: 'tags',
   projectTags: {
     manuscript: 'project/manuscript',
     conference: 'project/conference',

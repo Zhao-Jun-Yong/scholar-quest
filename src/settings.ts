@@ -31,7 +31,10 @@ export class ScholarQuestSettings extends PluginSettingTab {
     this.addTextSetting(containerEl, 'Sources folder', 'Papers, lectures, and other source notes', 'sourcesFolder');
     this.addTextSetting(containerEl, 'Ideas folder', 'Atomic / permanent notes', 'ideasFolder');
     this.addTextSetting(containerEl, 'Projects folder', 'Project files tracked for milestones', 'projectsFolder');
+    this.addTextSetting(containerEl, 'Reading status field', 'Frontmatter property containing reading status emoji (📥 👀 ✅)', 'readingStatusField');
     this.addTextSetting(containerEl, 'Atomic note tag', 'Tag that identifies an atomic note', 'atomTag');
+    this.addTextSetting(containerEl, 'Atomic note tag field', 'Frontmatter property containing atomic note tags', 'atomNoteTagField');
+    this.addTextSetting(containerEl, 'Project tag field', 'Frontmatter property containing project type tags', 'projectTagField');
 
     // Project tags — collapsible to reduce noise
     const tagDetails = containerEl.createEl('details');

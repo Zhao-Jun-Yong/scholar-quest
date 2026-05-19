@@ -59,6 +59,9 @@ export interface XPSettings {
   ideasFolder: string;
   projectsFolder: string;
   atomTag: string;
+  readingStatusField: string;
+  atomNoteTagField: string;
+  projectTagField: string;
   projectTags: Record<string, string>;
   xpPaperSkimmed: number;
   xpPaperCompleted: number;
