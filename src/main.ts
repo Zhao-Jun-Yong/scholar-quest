@@ -84,8 +84,7 @@ export default class ScholarQuestPlugin extends Plugin {
       callback: () => {
         const { totalXP, level, todayXP } = this.engine.getData();
         const tier = this.engine.getTierName(level);
-        const icon = this.settings.statusBarIcon;
-        new Notice(`${icon} ${tier} Lv ${level} · ${totalXP} XP total · +${todayXP} today`);
+        new Notice(`📜 ${tier} Lv ${level} · ${totalXP} XP total · +${todayXP} today`);
       },
     });
 
