@@ -6,17 +6,6 @@ import type ScholarQuestPlugin from './main';
 
 export const SIDEBAR_VIEW_TYPE = 'scholar-quest-sidebar';
 
-const ACTIVITY_ICONS: Record<string, string> = {
-  'paper-skimmed': '📄',
-  'paper-completed': '✅',
-  'atomic-note-created': '💡',
-  'atomic-note-developed': '✏️',
-  'writing-progress': '✍️',
-  'milestone-completed': '🏆',
-  'manual-log': '⚗️',
-  'career-init': '🎓',
-};
-
 function timeAgo(ts: number): string {
   const s = Math.floor((Date.now() - ts) / 1000);
   if (s < 60) return 'just now';
@@ -83,13 +72,11 @@ export class SidebarView extends ItemView {
       el.createDiv({ text: 'No activity yet.' }).style.color = 'var(--text-faint)';
     } else {
       for (const act of recent) {
-        const icon = ACTIVITY_ICONS[act.type] ?? '⚙️';
         const row = el.createDiv();
         row.style.cssText = 'display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; font-size: 0.83em;';
 
         const label = row.createDiv();
         label.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;';
-        label.createSpan({ text: icon + ' ' });
         label.createSpan({ text: act.label.length > 36 ? act.label.slice(0, 34) + '…' : act.label });
 
         const meta = row.createDiv();
@@ -114,7 +101,7 @@ export class SidebarView extends ItemView {
 
       const titleEl = projEl.createDiv();
       titleEl.style.cssText = 'font-weight: 600; font-size: 0.88em; margin-bottom: 3px;';
-      titleEl.createSpan({ text: '📁 ' + name + ' ' });
+      titleEl.createSpan({ text: name + ' ' });
       titleEl.createSpan({ text: `[${proj.projectType}]` }).style.cssText = 'color: var(--text-muted); font-weight: normal; font-size: 0.9em;';
 
       for (const m of proj.pending.slice(0, 5)) {

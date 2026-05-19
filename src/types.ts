@@ -67,7 +67,7 @@ export interface XPSettings {
   projectTemplates: Record<string, ProjectTemplate>;
   builtinActivities: ManualActivity[];
   customActivities: ManualActivity[];
-  tierNames: [string, string, string, string, string];
+  tierNames: string[];
   statusBarIcon: string;
 }
 

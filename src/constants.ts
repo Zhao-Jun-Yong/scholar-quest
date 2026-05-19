@@ -7,11 +7,18 @@ export const READING_EMOJIS = {
 };
 
 export const TIER_LEVEL_RANGES = [
-  { min: 1, max: 5 },
-  { min: 6, max: 10 },
-  { min: 11, max: 15 },
-  { min: 16, max: 20 },
-  { min: 21, max: 25 },
+  { min: 1,  max: 4  },  // T1  Hatchling
+  { min: 5,  max: 8  },  // T2  Crack
+  { min: 9,  max: 12 },  // T3  Glow
+  { min: 13, max: 16 },  // T4  Hatch
+  { min: 17, max: 20 },  // T5  Sprig
+  { min: 21, max: 24 },  // T6  Flare
+  { min: 25, max: 28 },  // T7  Blaze
+  { min: 29, max: 32 },  // T8  Inferno
+  { min: 33, max: 36 },  // T9  Drake
+  { min: 37, max: 40 },  // T10 Wyrm
+  { min: 41, max: 44 },  // T11 Dragon
+  { min: 45, max: 48 },  // T12 Nova
 ];
 
 export const MAX_ACTIVITIES_LOG = 500;
@@ -148,7 +155,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'talk-delivered',  name: 'On Stage',            icon: '🎤', description: 'Deliver an invited talk',                condition: { type: 'milestoneLabel', label: 'Talk delivered' } },
 ];
 
-export const TIER_ICONS: [string, string, string, string, string] = ['✨', '🔥', '🌟', '💫', '⭐'];
+export const TIER_ICONS: string[] = ['🥚','🥚','🥚','🥚','🐣','🐣','🐣','🐣','🐉','🐉','🐉','🐉'];
 
 export const ONBOARDING_XP = {
   phd: 1000,
@@ -206,6 +213,6 @@ export const DEFAULT_SETTINGS: XPSettings = {
     { name: 'Lab / fieldwork session', xp: 40 },
   ],
   customActivities: [],
-  tierNames: ['Spark', 'Ember', 'Flame', 'Beacon', 'Nova'],
+  tierNames: ['Hatchling','Crack','Glow','Hatch','Sprig','Flare','Blaze','Inferno','Drake','Wyrm','Dragon','Nova'],
   statusBarIcon: '⚗️',
 };

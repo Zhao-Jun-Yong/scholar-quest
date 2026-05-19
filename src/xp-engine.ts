@@ -28,7 +28,7 @@ export class XPEngine {
   recalculateLevel(): void {
     let remaining = this.data.totalXP;
     let level = 1;
-    while (level < 25) {
+    while (level < 48) {
       const needed = this.xpToNextLevel(level);
       if (remaining < needed) break;
       remaining -= needed;
