@@ -133,7 +133,9 @@ export class SidebarView extends ItemView {
         chip.style.cssText = 'display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: var(--background-secondary); border-radius: 12px; font-size: 0.8em;';
         chip.setAttribute('aria-label', `${ach.name}: ${ach.description}`);
         chip.setAttribute('data-tooltip-position', 'top');
-        chip.createSpan({ text: ach.icon });
+        const iconEl = chip.createDiv();
+        iconEl.style.cssText = 'width:16px;height:16px;flex-shrink:0;';
+        iconEl.innerHTML = ach.icon;
         chip.createSpan({ text: ach.name });
       }
     }
@@ -152,7 +154,9 @@ export class SidebarView extends ItemView {
         chip.style.cssText = 'display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: var(--background-secondary); border-radius: 12px; font-size: 0.8em; opacity: 0.4;';
         chip.setAttribute('aria-label', ach.description);
         chip.setAttribute('data-tooltip-position', 'top');
-        chip.createSpan({ text: ach.icon });
+        const iconEl = chip.createDiv();
+        iconEl.style.cssText = 'width:16px;height:16px;flex-shrink:0;';
+        iconEl.innerHTML = ach.icon;
         chip.createSpan({ text: ach.name });
       }
     }
