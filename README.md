@@ -127,7 +127,9 @@ All defaults are overridable in settings.
 
 ## Roadmap
 
-- **Phase 3:** Shareable profile card, social leaderboard
+- Zotero integration for richer reading progress tracking
+- Shareable profile card
+- Social leaderboard
 
 ## Development
 
