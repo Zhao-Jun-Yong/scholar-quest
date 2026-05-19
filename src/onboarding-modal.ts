@@ -2,7 +2,7 @@ import { App, Modal, Setting } from 'obsidian';
 import { XPEngine } from './xp-engine';
 import { ONBOARDING_XP, TIER_ICONS, TIER_LEVEL_RANGES } from './constants';
 
-interface OnboardingData {
+export interface OnboardingData {
   phd: boolean;
   masters: boolean;
   authoredBooks: number;
@@ -19,11 +19,11 @@ interface OnboardingData {
 
 export class OnboardingModal extends Modal {
   private engine: XPEngine;
-  private onConfirm: (xp: number) => Promise<void>;
+  private onConfirm: (xp: number, careerData: OnboardingData) => Promise<void>;
   private data: OnboardingData;
   private previewEl!: HTMLElement;
 
-  constructor(app: App, engine: XPEngine, onConfirm: (xp: number) => Promise<void>) {
+  constructor(app: App, engine: XPEngine, onConfirm: (xp: number, careerData: OnboardingData) => Promise<void>) {
     super(app);
     this.engine = engine;
     this.onConfirm = onConfirm;
@@ -169,14 +169,14 @@ export class OnboardingModal extends Modal {
       .addButton(b => b
         .setButtonText('Start at Level 1')
         .onClick(async () => {
-          await this.onConfirm(0);
+          await this.onConfirm(0, this.data);
           this.close();
         }))
       .addButton(b => b
         .setButtonText('Set starting level')
         .setCta()
         .onClick(async () => {
-          await this.onConfirm(this.calcXP());
+          await this.onConfirm(this.calcXP(), this.data);
           this.close();
         }));
   }

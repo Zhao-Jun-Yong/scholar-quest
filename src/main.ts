@@ -5,7 +5,7 @@ import { ManualLogger } from './manual-logger';
 import { MilestoneModal } from './milestone-modal';
 import { StatusBar } from './status-bar';
 import { ScholarQuestSettings } from './settings';
-import { OnboardingModal } from './onboarding-modal';
+import { OnboardingModal, OnboardingData } from './onboarding-modal';
 import { SidebarView, SIDEBAR_VIEW_TYPE } from './sidebar-view';
 import { PluginData, XPSettings } from './types';
 import { DEFAULT_SETTINGS, ACHIEVEMENTS } from './constants';
@@ -116,7 +116,7 @@ export default class ScholarQuestPlugin extends Plugin {
   }
 
   private openOnboarding(): void {
-    new OnboardingModal(this.app, this.engine, async (xp) => {
+    new OnboardingModal(this.app, this.engine, async (xp, careerData) => {
       const prev = this.pluginData.activities.find(a => a.type === 'career-init');
       if (prev) {
         this.pluginData.totalXP = Math.max(0, this.pluginData.totalXP - prev.xp);
@@ -127,10 +127,35 @@ export default class ScholarQuestPlugin extends Plugin {
       if (xp > 0) {
         await this.engine.awardXP(xp, 'career-init', 'Career history imported');
       }
+
+      const careerIds = this.resolveCareerAchievements(careerData);
+      const newCareerAchs = careerIds
+        .filter(id => !(id in this.pluginData.unlockedAchievements))
+        .map(id => {
+          this.pluginData.unlockedAchievements[id] = Date.now();
+          return ACHIEVEMENTS.find(a => a.id === id);
+        })
+        .filter((a): a is typeof ACHIEVEMENTS[0] => a !== undefined);
+
       this.pluginData.hasOnboarded = true;
       await this.savePluginData();
       new Notice(`🎓 Starting at Level ${this.pluginData.level}.`);
+      for (const ach of newCareerAchs) {
+        new Notice(`${ach.icon} Achievement unlocked: ${ach.name} — ${ach.description}`, 6000);
+      }
     }).open();
+  }
+
+  private resolveCareerAchievements(d: OnboardingData): string[] {
+    const ids: string[] = [];
+    if (d.phd || d.masters)                                      ids.push('defended');
+    if (d.invitedTalks > 0 || d.conferenceTalks > 0)            ids.push('talk-delivered');
+    if (d.grantsPI > 0 || d.grantsCoI > 0)                      ids.push('awarded');
+    if (d.firstAuthorPapers > 0 || d.coAuthorPapers > 0) {
+      ids.push('submitted');
+      ids.push('accepted');
+    }
+    return ids;
   }
 
   async activateSidebar(): Promise<void> {
