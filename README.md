@@ -1,5 +1,7 @@
 # Scholar Quest
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-zhaojun0425-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/zhaojun0425)
+
 An [Obsidian](https://obsidian.md) plugin that gamifies academic work with XP, levels, and milestone tracking.
 
 **Design philosophy:** Gamification should accelerate productivity, not become a task itself. XP is awarded silently in the background; wins surface automatically.
