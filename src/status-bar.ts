@@ -14,8 +14,10 @@ export class StatusBar {
   update(): void {
     const text = this.engine.getStatusBarText();
     this.el.empty();
-    const img = this.el.createEl('img', { attr: { src: this.imgSrc, alt: '' } });
-    img.style.cssText = 'height:14px;vertical-align:middle;margin-right:3px;image-rendering:pixelated';
-    this.el.createSpan({ text });
+    const wrapper = this.el.createEl('span');
+    wrapper.style.cssText = 'display:inline-flex;align-items:center;gap:3px';
+    const img = wrapper.createEl('img', { attr: { src: this.imgSrc, alt: '' } });
+    img.style.cssText = 'height:32px;width:32px;image-rendering:pixelated';
+    wrapper.createSpan({ text });
   }
 }
