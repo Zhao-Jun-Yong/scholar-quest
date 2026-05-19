@@ -143,6 +143,17 @@ npm test       # run tests
 
 Copy `main.js` and `manifest.json` to your vault's `.obsidian/plugins/scholar-quest/` folder.
 
+## Citation
+
+If you use Scholar Quest in your work, please cite it:
+
+```
+Yong, Z.-J. (2026). Scholar Quest: Gamify your academic workflow with XP and levels (v0.2.0).
+https://github.com/Zhao-Jun-Yong/scholar-quest
+```
+
+A `CITATION.cff` file is included for automated citation tools (GitHub, Zotero, Zenodo).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
