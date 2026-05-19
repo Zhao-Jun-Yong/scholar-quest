@@ -7,18 +7,18 @@ export const READING_EMOJIS = {
 };
 
 export const TIER_LEVEL_RANGES = [
-  { min: 1,  max: 4  },  // T1  Hatchling
-  { min: 5,  max: 8  },  // T2  Crack
-  { min: 9,  max: 12 },  // T3  Glow
-  { min: 13, max: 16 },  // T4  Hatch
-  { min: 17, max: 20 },  // T5  Sprig
-  { min: 21, max: 24 },  // T6  Flare
-  { min: 25, max: 28 },  // T7  Blaze
-  { min: 29, max: 32 },  // T8  Inferno
-  { min: 33, max: 36 },  // T9  Drake
-  { min: 37, max: 40 },  // T10 Wyrm
-  { min: 41, max: 44 },  // T11 Dragon
-  { min: 45, max: 48 },  // T12 Nova
+  { min: 1,  max: 5  },  // T1  Dormant
+  { min: 6,  max: 10 },  // T2  Stirring
+  { min: 11, max: 15 },  // T3  Kindling
+  { min: 16, max: 20 },  // T4  Breaking
+  { min: 21, max: 25 },  // T5  Wisp
+  { min: 26, max: 30 },  // T6  Flicker
+  { min: 31, max: 35 },  // T7  Blaze
+  { min: 36, max: 40 },  // T8  Inferno
+  { min: 41, max: 45 },  // T9  Drake
+  { min: 46, max: 50 },  // T10 Wyrm
+  { min: 51, max: 55 },  // T11 Dragon
+  { min: 56, max: 60 },  // T12 Nova
 ];
 
 export const MAX_ACTIVITIES_LOG = 500;
@@ -131,22 +131,29 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'first-note',      name: 'First Idea',          icon: '💡', description: 'Create your first atomic note',           condition: { type: 'activityCount', activityType: 'atomic-note-created', count: 1 } },
   { id: 'first-paper',     name: 'First Read',          icon: '📖', description: 'Complete your first paper',               condition: { type: 'activityCount', activityType: 'paper-completed', count: 1 } },
   { id: 'first-milestone', name: 'Milestone Unlocked',  icon: '🏁', description: 'Complete your first project milestone',   condition: { type: 'activityCount', activityType: 'milestone-completed', count: 1 } },
-  // Quantity
-  { id: 'notes-25',        name: 'Idea Machine',        icon: '🧠', description: 'Create 25 atomic notes',                  condition: { type: 'activityCount', activityType: 'atomic-note-created', count: 25 } },
-  { id: 'notes-100',       name: 'Deep Thinker',        icon: '🔬', description: 'Create 100 atomic notes',                 condition: { type: 'activityCount', activityType: 'atomic-note-created', count: 100 } },
-  { id: 'papers-10',       name: 'Bookworm',            icon: '📚', description: 'Complete 10 papers',                      condition: { type: 'activityCount', activityType: 'paper-completed', count: 10 } },
-  { id: 'milestones-10',   name: 'On a Roll',           icon: '🎯', description: 'Complete 10 project milestones',          condition: { type: 'activityCount', activityType: 'milestone-completed', count: 10 } },
-  { id: 'milestones-25',   name: 'Overachiever',        icon: '🚀', description: 'Complete 25 project milestones',          condition: { type: 'activityCount', activityType: 'milestone-completed', count: 25 } },
-  // Level
-  { id: 'level-5',         name: 'Ember',               icon: '🔥', description: 'Reach Level 5',                          condition: { type: 'level', level: 5 } },
-  { id: 'level-10',        name: 'Flame',               icon: '🌟', description: 'Reach Level 10',                         condition: { type: 'level', level: 10 } },
-  { id: 'level-15',        name: 'Beacon',              icon: '💫', description: 'Reach Level 15',                         condition: { type: 'level', level: 15 } },
-  { id: 'level-20',        name: 'Nova',                icon: '⭐', description: 'Reach Level 20',                         condition: { type: 'level', level: 20 } },
-  { id: 'level-25',        name: 'Transcendent',        icon: '✨', description: 'Reach the maximum level',                condition: { type: 'level', level: 25 } },
+  { id: 'writing-first',   name: 'First Draft',         icon: '✍️', description: 'Make your first writing progress',                              condition: { type: 'activityCount', activityType: 'writing-progress', count: 1 } },
+  // Quantity — notes
+  { id: 'notes-25',        name: 'Prolific',            icon: '🧠', description: 'Create 25 atomic notes',                                        condition: { type: 'activityCount', activityType: 'atomic-note-created', count: 25 } },
+  { id: 'notes-100',       name: 'Zettelkasten',        icon: '🔬', description: 'Create 100 atomic notes',                                       condition: { type: 'activityCount', activityType: 'atomic-note-created', count: 100 } },
+  // Quantity — papers
+  { id: 'papers-10',       name: 'Bookworm',            icon: '📚', description: 'Complete 10 papers',                                            condition: { type: 'activityCount', activityType: 'paper-completed', count: 10 } },
+  { id: 'papers-25',       name: 'Voracious Reader',    icon: '📚', description: 'Complete 25 papers',                                            condition: { type: 'activityCount', activityType: 'paper-completed', count: 25 } },
+  { id: 'papers-50',       name: 'Scholar',             icon: '📚', description: 'Complete 50 papers',                                            condition: { type: 'activityCount', activityType: 'paper-completed', count: 50 } },
+  // Quantity — milestones
+  { id: 'milestones-10',   name: 'On a Roll',           icon: '🎯', description: 'Complete 10 project milestones',                                condition: { type: 'activityCount', activityType: 'milestone-completed', count: 10 } },
+  { id: 'milestones-50',   name: 'Relentless',          icon: '🚀', description: 'Complete 50 project milestones',                                condition: { type: 'activityCount', activityType: 'milestone-completed', count: 50 } },
+  // Quantity — writing
+  { id: 'writing-100',     name: 'Wordsmith',           icon: '✍️', description: '100 writing progress events (~10,000 words above previous peak)', condition: { type: 'activityCount', activityType: 'writing-progress', count: 100 } },
+  // Level — tied to phase transitions (5 levels per tier, max level 60)
+  { id: 'level-5',         name: 'Kindled',             icon: '🔥', description: 'Reach Level 5 — your first tier complete',                      condition: { type: 'level', level: 5 } },
+  { id: 'level-20',        name: 'Hatched',             icon: '🌟', description: 'Reach Level 20 — your dragon has emerged from the egg',          condition: { type: 'level', level: 20 } },
+  { id: 'level-40',        name: 'Risen',               icon: '💫', description: 'Reach Level 40 — your dragon is fully grown',                   condition: { type: 'level', level: 40 } },
+  { id: 'level-55',        name: 'Luminary',            icon: '⭐', description: 'Reach Level 55 — a distinguished scholar',                      condition: { type: 'level', level: 55 } },
+  { id: 'level-60',        name: 'Nova',                icon: '✨', description: 'Reach the maximum level — peak form, exceptional career',        condition: { type: 'level', level: 60 } },
   // XP
-  { id: 'xp-1000',         name: 'Getting Warmed Up',   icon: '⚡', description: 'Earn 1,000 XP',                          condition: { type: 'totalXP', xp: 1000 } },
-  { id: 'xp-5000',         name: 'In the Zone',         icon: '💪', description: 'Earn 5,000 XP',                          condition: { type: 'totalXP', xp: 5000 } },
-  { id: 'xp-20000',        name: 'Veteran',             icon: '🏆', description: 'Earn 20,000 XP',                         condition: { type: 'totalXP', xp: 20000 } },
+  { id: 'xp-1000',         name: 'Getting Warmed Up',   icon: '⚡', description: 'Earn 1,000 XP',                                                 condition: { type: 'totalXP', xp: 1000 } },
+  { id: 'xp-5000',         name: 'In the Zone',         icon: '💪', description: 'Earn 5,000 XP',                                                 condition: { type: 'totalXP', xp: 5000 } },
+  { id: 'xp-20000',        name: 'Veteran',             icon: '🏆', description: 'Earn 20,000 XP',                                                condition: { type: 'totalXP', xp: 20000 } },
   // Specific academic milestones (match "Milestone: <label>")
   { id: 'submitted',       name: 'Under Review',        icon: '📬', description: 'Submit a manuscript or grant',           condition: { type: 'milestoneLabel', label: 'Submitted' } },
   { id: 'accepted',        name: 'Accepted!',           icon: '🎉', description: 'Get a manuscript accepted',              condition: { type: 'milestoneLabel', label: 'Accepted' } },
@@ -213,6 +220,6 @@ export const DEFAULT_SETTINGS: XPSettings = {
     { name: 'Lab / fieldwork session', xp: 40 },
   ],
   customActivities: [],
-  tierNames: ['Hatchling','Crack','Glow','Hatch','Sprig','Flare','Blaze','Inferno','Drake','Wyrm','Dragon','Nova'],
+  tierNames: ['Dormant','Stirring','Kindling','Breaking','Wisp','Flicker','Blaze','Inferno','Drake','Wyrm','Dragon','Nova'],
   statusBarIcon: '⚗️',
 };
