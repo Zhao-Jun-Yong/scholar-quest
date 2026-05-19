@@ -1,6 +1,6 @@
 # Scholar Quest
 
-[![DOI](https://zenodo.org/badge/1204679331.svg)](https://doi.org/10.5281/zenodo.19467725)
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.19467725.svg)](https://doi.org/10.5281/zenodo.19467725)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-zhaojun0425-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/zhaojun0425)
 
 An [Obsidian](https://obsidian.md) plugin that gamifies academic work with XP, levels, and milestone tracking.
