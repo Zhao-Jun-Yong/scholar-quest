@@ -1,10 +1,12 @@
-import { ItemView, WorkspaceLeaf } from 'obsidian';
+import { ItemView, Notice, WorkspaceLeaf } from 'obsidian';
 import { ACHIEVEMENTS, TIER_LEVEL_RANGES } from './constants';
 import { TIER_AVATARS } from './tier-avatars';
 import { PluginData } from './types';
 import type ScholarQuestPlugin from './main';
 
 export const SIDEBAR_VIEW_TYPE = 'scholar-quest-sidebar';
+
+const MAX_VISIBLE_PROJECTS = 3;
 
 function timeAgo(ts: number): string {
   const s = Math.floor((Date.now() - ts) / 1000);
@@ -74,11 +76,9 @@ export class SidebarView extends ItemView {
       for (const act of recent) {
         const row = el.createDiv();
         row.style.cssText = 'display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; font-size: 0.83em;';
-
         const label = row.createDiv();
         label.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;';
         label.createSpan({ text: act.label.length > 36 ? act.label.slice(0, 34) + '…' : act.label });
-
         const meta = row.createDiv();
         meta.style.cssText = 'color: var(--text-muted); white-space: nowrap; margin-left: 8px; flex-shrink: 0;';
         meta.createSpan({ text: `+${act.xp}` }).style.color = 'var(--color-green)';
@@ -90,29 +90,105 @@ export class SidebarView extends ItemView {
     this.renderAchievements(el, data);
 
     // Active projects
-    const projects = engine.getAllProjectsWithPendingMilestones();
-    if (projects.length === 0) return;
+    this.renderProjects(el, data);
+  }
+
+  private renderProjects(el: HTMLElement, data: PluginData): void {
+    const engine = this.plugin.engine;
+    const archived = new Set(data.archivedProjects ?? []);
+    const all = engine.getAllProjectsWithPendingMilestones();
+    const active = all.filter(p => !archived.has(p.filePath));
+    const archivedProjects = all.filter(p => archived.has(p.filePath));
+
+    if (active.length === 0 && archivedProjects.length === 0) return;
 
     this.sectionHeading(el, 'Active Projects');
-    for (const proj of projects) {
-      const name = proj.filePath.split('/').pop()?.replace(/\.md$/, '') ?? proj.filePath;
-      const projEl = el.createDiv();
-      projEl.style.cssText = 'margin-bottom: 10px;';
 
-      const titleEl = projEl.createDiv();
-      titleEl.style.cssText = 'font-weight: 600; font-size: 0.88em; margin-bottom: 3px;';
-      titleEl.createSpan({ text: name + ' ' });
-      titleEl.createSpan({ text: `[${proj.projectType}]` }).style.cssText = 'color: var(--text-muted); font-weight: normal; font-size: 0.9em;';
+    const visible = active.slice(0, MAX_VISIBLE_PROJECTS);
+    const hidden = active.slice(MAX_VISIBLE_PROJECTS);
 
-      for (const m of proj.pending.slice(0, 5)) {
-        const mEl = projEl.createDiv();
-        mEl.style.cssText = 'font-size: 0.8em; color: var(--text-muted); padding-left: 10px; margin-bottom: 2px;';
-        mEl.setText(`□ ${m.name} (+${m.xp} XP)`);
+    for (const proj of visible) this.renderProject(el, proj);
+
+    if (hidden.length > 0) {
+      const details = el.createEl('details');
+      details.style.cssText = 'margin-top: 4px;';
+      const summary = details.createEl('summary');
+      summary.style.cssText = 'color: var(--text-faint); font-size: 0.78em; cursor: pointer; margin-bottom: 6px;';
+      summary.setText(`+${hidden.length} more project${hidden.length > 1 ? 's' : ''}…`);
+      for (const proj of hidden) this.renderProject(details, proj);
+    }
+
+    // Archived section
+    if (archivedProjects.length > 0) {
+      const details = el.createEl('details');
+      details.style.cssText = 'margin-top: 8px;';
+      const summary = details.createEl('summary');
+      summary.style.cssText = 'color: var(--text-faint); font-size: 0.78em; cursor: pointer; margin-bottom: 6px;';
+      summary.setText(`Archived (${archivedProjects.length})`);
+
+      for (const proj of archivedProjects) {
+        const name = proj.filePath.split('/').pop()?.replace(/\.md$/, '') ?? proj.filePath;
+        const row = details.createDiv();
+        row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; opacity: 0.6;';
+        row.createSpan({ text: name }).style.cssText = 'font-size: 0.83em; font-weight: 500;';
+
+        const btn = row.createEl('button', { text: 'Unarchive' });
+        btn.style.cssText = 'font-size: 0.72em; padding: 2px 6px; cursor: pointer;';
+        btn.onclick = async () => {
+          this.plugin.pluginData.archivedProjects =
+            (this.plugin.pluginData.archivedProjects ?? []).filter(p => p !== proj.filePath);
+          await this.plugin.savePluginData();
+        };
       }
-      if (proj.pending.length > 5) {
-        projEl.createDiv({ text: `  +${proj.pending.length - 5} more…` })
-          .style.cssText = 'font-size: 0.78em; color: var(--text-faint); padding-left: 10px;';
-      }
+    }
+  }
+
+  private renderProject(el: HTMLElement, proj: { filePath: string; projectType: string; pending: { name: string; xp: number }[] }): void {
+    const name = proj.filePath.split('/').pop()?.replace(/\.md$/, '') ?? proj.filePath;
+    const projEl = el.createDiv();
+    projEl.style.cssText = 'margin-bottom: 10px;';
+
+    // Title row with archive button
+    const titleRow = projEl.createDiv();
+    titleRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;';
+
+    const titleEl = titleRow.createDiv();
+    titleEl.style.cssText = 'font-weight: 600; font-size: 0.88em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;';
+    titleEl.createSpan({ text: name + ' ' });
+    titleEl.createSpan({ text: `[${proj.projectType}]` }).style.cssText = 'color: var(--text-muted); font-weight: normal; font-size: 0.9em;';
+
+    const archiveBtn = titleRow.createEl('button');
+    archiveBtn.setText('Archive');
+    archiveBtn.style.cssText = 'font-size: 0.68em; padding: 1px 5px; cursor: pointer; flex-shrink: 0; margin-left: 6px; color: var(--text-faint);';
+    archiveBtn.onclick = async () => {
+      if (!this.plugin.pluginData.archivedProjects) this.plugin.pluginData.archivedProjects = [];
+      this.plugin.pluginData.archivedProjects.push(proj.filePath);
+      await this.plugin.savePluginData();
+    };
+
+    // Clickable milestones
+    for (const m of proj.pending.slice(0, 5)) {
+      const mEl = projEl.createDiv();
+      mEl.style.cssText = 'display: flex; align-items: center; gap: 5px; font-size: 0.8em; color: var(--text-muted); padding-left: 10px; margin-bottom: 2px; cursor: pointer;';
+      mEl.setAttribute('aria-label', `Complete milestone: ${m.name} (+${m.xp} XP)`);
+
+      const box = mEl.createSpan({ text: '□' });
+      box.style.cssText = 'font-size: 1.05em; flex-shrink: 0;';
+      mEl.createSpan({ text: `${m.name}` });
+      mEl.createSpan({ text: ` +${m.xp} XP` }).style.cssText = 'color: var(--text-faint); font-size: 0.9em;';
+
+      mEl.onmouseenter = () => { box.setText('☑'); mEl.style.color = 'var(--text-normal)'; };
+      mEl.onmouseleave = () => { box.setText('□'); mEl.style.color = 'var(--text-muted)'; };
+
+      mEl.onclick = async () => {
+        const xp = await this.plugin.engine.completeMilestone(proj.filePath, m.name);
+        if (xp > 0) new Notice(`+${xp} XP — ${m.name}`);
+      };
+    }
+
+    if (proj.pending.length > 5) {
+      projEl.createDiv({ text: `  +${proj.pending.length - 5} more…` })
+        .style.cssText = 'font-size: 0.78em; color: var(--text-faint); padding-left: 10px;';
     }
   }
 
@@ -146,7 +222,6 @@ export class SidebarView extends ItemView {
       const summary = details.createEl('summary');
       summary.style.cssText = 'color: var(--text-faint); font-size: 0.78em; cursor: pointer;';
       summary.setText(`${locked.length} locked`);
-
       const grid = details.createDiv();
       grid.style.cssText = 'display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;';
       for (const ach of locked) {

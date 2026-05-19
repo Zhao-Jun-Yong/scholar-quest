@@ -94,4 +94,5 @@ export interface PluginData {
   todayDate: string;
   hasOnboarded?: boolean;
   unlockedAchievements: Record<string, number>;
+  archivedProjects: string[];
 }

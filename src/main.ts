@@ -21,6 +21,7 @@ const DEFAULT_DATA: PluginData = {
   todayDate: new Date().toISOString().split('T')[0],
   hasOnboarded: false,
   unlockedAchievements: {},
+  archivedProjects: [],
 };
 
 export default class ScholarQuestPlugin extends Plugin {
@@ -217,6 +218,7 @@ export default class ScholarQuestPlugin extends Plugin {
       todayDate: saved?.todayDate ?? DEFAULT_DATA.todayDate,
       hasOnboarded: saved?.hasOnboarded ?? ((saved?.activities?.length ?? 0) > 0),
       unlockedAchievements: saved?.unlockedAchievements ?? {},
+      archivedProjects: saved?.archivedProjects ?? [],
     };
 
     if (saved?.unlockedAchievements === undefined) {
