@@ -1,4 +1,4 @@
-import { Notice, Plugin, TFile } from 'obsidian';
+import { Notice, Plugin, TFile, normalizePath } from 'obsidian';
 import { XPEngine } from './xp-engine';
 import { VaultWatcher } from './vault-watcher';
 import { ManualLogger } from './manual-logger';
@@ -42,7 +42,10 @@ export default class ScholarQuestPlugin extends Plugin {
       this.app.metadataCache
     );
 
-    this.statusBar = new StatusBar(this.addStatusBarItem(), this.engine);
+    const scrollSrc = this.app.vault.adapter.getResourcePath(
+      normalizePath(`${this.manifest.dir}/assets/sprites/scroll-icon.png`)
+    );
+    this.statusBar = new StatusBar(this.addStatusBarItem(), this.engine, scrollSrc);
     this.statusBar.update();
 
     this.registerView(SIDEBAR_VIEW_TYPE, leaf => new SidebarView(leaf, this));

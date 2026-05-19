@@ -85,9 +85,8 @@ export class XPEngine {
   getStatusBarText(): string {
     this.resetTodayXPIfNewDay();
     const { level, todayXP } = this.data;
-    const icon = this.settings.statusBarIcon;
     const bar = this.getProgressBar();
-    return `${icon} Lv ${level} · ${bar} · +${todayXP} today`;
+    return `Lv ${level} · ${bar} · +${todayXP} today`;
   }
 
   getData(): PluginData { return this.data; }

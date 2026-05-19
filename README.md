@@ -16,7 +16,7 @@ An [Obsidian](https://obsidian.md) plugin that gamifies academic work with XP, l
 - **Tier avatar progression** — 12 visual tiers from egg stages through Nova; your avatar evolves in the sidebar as you level up
 - **Manual log** — quickly log off-Obsidian activities (data analysis, fieldwork) in ~2 seconds
 - **Level system** — 12 tiers, levels 1–60, XP per level = 300 × N
-- **Status bar** — ambient level indicator: `⚗️ Lv 7 · ████░░ · +30 today`
+- **Status bar** — ambient level indicator with pixel art scroll icon: `Lv 7 · ████░░ · +30 today`
 - **Fully configurable** — vault paths, tags, XP values, milestone templates, and tier names all editable in settings
 
 ## Getting Started
@@ -117,7 +117,7 @@ The plugin ships with defaults matching an [Obsidian Zettelkasten](https://obsid
 | Ideas folder | `Atlas/Ideas` |
 | Projects folder | `Efforts` |
 | Atom note tag | `cards/atom` |
-| Manuscript tag | `project/manuscript` |
+| Project tags | `project/<type>` — see [Project Types](#project-types) |
 
 All defaults are overridable in settings.
 
