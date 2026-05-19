@@ -198,7 +198,15 @@ export default class ScholarQuestPlugin extends Plugin {
 
   async loadPluginData(): Promise<void> {
     const saved = await this.loadData();
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, saved?.settings ?? {});
+    const savedSettings = saved?.settings ?? {} as any;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings);
+    // Migrate old builtinActivities/customActivities to manualActivities
+    if (savedSettings.builtinActivities !== undefined || savedSettings.customActivities !== undefined) {
+      this.settings.manualActivities = [
+        ...(savedSettings.builtinActivities ?? []),
+        ...(savedSettings.customActivities ?? []),
+      ];
+    }
     this.pluginData = {
       totalXP: saved?.totalXP ?? 0,
       level: saved?.level ?? 1,

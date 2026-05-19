@@ -1,5 +1,7 @@
 import { XPSettings, MilestoneTemplate } from './types';
 
+export const MAX_MANUAL_ACTIVITY_XP = 200;
+
 export const READING_EMOJIS = {
   unprocessed: '📥',
   skimmed: '👀',
@@ -215,11 +217,14 @@ export const DEFAULT_SETTINGS: XPSettings = {
       { milestones: v.map(m => ({ ...m })) },
     ])
   ),
-  builtinActivities: [
-    { name: 'Data analysis session', xp: 40 },
-    { name: 'Lab / fieldwork session', xp: 40 },
+  manualActivities: [
+    { name: 'Data analysis / coding session', xp: 40 },
+    { name: 'Lab / fieldwork session',        xp: 40 },
+    { name: 'Supervision meeting',             xp: 30 },
+    { name: 'Research or lab meeting',         xp: 20 },
+    { name: 'Conference day',                  xp: 50 },
+    { name: 'Grant writing session',           xp: 40 },
   ],
-  customActivities: [],
   tierNames: ['Dormant','Stirring','Kindling','Breaking','Wisp','Flicker','Blaze','Inferno','Drake','Wyrm','Dragon','Nova'],
   statusBarIcon: '⚗️',
 };

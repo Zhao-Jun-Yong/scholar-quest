@@ -1,5 +1,5 @@
 import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
-import { DEFAULT_MILESTONE_TEMPLATES } from './constants';
+import { DEFAULT_MILESTONE_TEMPLATES, MAX_MANUAL_ACTIVITY_XP } from './constants';
 import type ScholarQuestPlugin from './main';
 
 export class ScholarQuestSettings extends PluginSettingTab {
@@ -40,27 +40,33 @@ export class ScholarQuestSettings extends PluginSettingTab {
     // Manual Activities
     containerEl.createEl('h3', { text: 'Manual Log Activities' });
     containerEl.createEl('p', {
-      text: 'Add custom activities for work done outside Obsidian. Built-in activities use fixed XP values.',
+      text: `Activities for work done outside Obsidian. Max ${MAX_MANUAL_ACTIVITY_XP} XP per activity. Each activity can only be logged once per day.`,
       cls: 'setting-item-description',
     });
-    for (const activity of this.plugin.settings.customActivities) {
+    for (const activity of this.plugin.settings.manualActivities) {
       new Setting(containerEl)
         .addText(t => t.setPlaceholder('Activity name').setValue(activity.name).onChange(async v => {
           activity.name = v; await this.save();
         }))
-        .addText(t => t.setPlaceholder('XP').setValue(String(activity.xp)).onChange(async v => {
-          const n = parseInt(v);
-          if (!isNaN(n) && n > 0) { activity.xp = n; await this.save(); }
-        }))
+        .addText(t => {
+          t.setPlaceholder('XP').setValue(String(activity.xp));
+          t.inputEl.type = 'number';
+          t.inputEl.min = '1';
+          t.inputEl.max = String(MAX_MANUAL_ACTIVITY_XP);
+          t.onChange(async v => {
+            const n = Math.min(parseInt(v) || 1, MAX_MANUAL_ACTIVITY_XP);
+            activity.xp = n; await this.save();
+          });
+        })
         .addButton(b => b.setButtonText('Remove').onClick(async () => {
-          this.plugin.settings.customActivities =
-            this.plugin.settings.customActivities.filter(a => a !== activity);
+          this.plugin.settings.manualActivities =
+            this.plugin.settings.manualActivities.filter(a => a !== activity);
           await this.save();
           this.display();
         }));
     }
-    new Setting(containerEl).addButton(b => b.setButtonText('Add custom activity').onClick(async () => {
-      this.plugin.settings.customActivities.push({ name: 'New activity', xp: 40 });
+    new Setting(containerEl).addButton(b => b.setButtonText('Add activity').onClick(async () => {
+      this.plugin.settings.manualActivities.push({ name: 'New activity', xp: 40 });
       await this.save();
       this.display();
     }));

@@ -65,8 +65,7 @@ export interface XPSettings {
   atomicDevelopmentWordThreshold: number;
   atomicDevelopmentCooldownMinutes: number;
   projectTemplates: Record<string, ProjectTemplate>;
-  builtinActivities: ManualActivity[];
-  customActivities: ManualActivity[];
+  manualActivities: ManualActivity[];
   tierNames: string[];
   statusBarIcon: string;
 }

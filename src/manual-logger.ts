@@ -12,29 +12,41 @@ export class ManualLogger extends Modal {
     this.settings = settings;
   }
 
+  private isLoggedToday(activityName: string): boolean {
+    const today = this.engine.getData().todayDate;
+    return this.engine.getData().activities.some(a =>
+      a.type === 'manual-log' &&
+      a.label === activityName &&
+      new Date(a.timestamp).toISOString().split('T')[0] === today
+    );
+  }
+
   onOpen(): void {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.createEl('h2', { text: 'Log academic activity' });
 
-    const allActivities = [
-      ...this.settings.builtinActivities,
-      ...this.settings.customActivities,
-    ];
-
-    for (const activity of allActivities) {
+    for (const activity of this.settings.manualActivities) {
+      const alreadyDone = this.isLoggedToday(activity.name);
       const btn = contentEl.createEl('button', {
-        text: `${activity.name}  (+${activity.xp} XP)`,
+        text: alreadyDone
+          ? `✓ ${activity.name}  (logged today)`
+          : `${activity.name}  (+${activity.xp} XP)`,
       });
       Object.assign(btn.style, {
         display: 'block',
         width: '100%',
         marginBottom: '8px',
         padding: '10px',
-        cursor: 'pointer',
+        cursor: alreadyDone ? 'default' : 'pointer',
         textAlign: 'left',
+        opacity: alreadyDone ? '0.45' : '1',
       });
-      btn.onclick = async () => {
+      if (!alreadyDone) btn.onclick = async () => {
+        if (this.isLoggedToday(activity.name)) {
+          new Notice(`Already logged "${activity.name}" today.`);
+          return;
+        }
         await this.engine.awardXP(activity.xp, 'manual-log', activity.name);
         new Notice(`+${activity.xp} XP — ${activity.name}`);
         this.close();
