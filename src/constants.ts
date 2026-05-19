@@ -1,6 +1,7 @@
 import { XPSettings, MilestoneTemplate } from './types';
 
 export const MAX_MANUAL_ACTIVITY_XP = 200;
+export const MAX_MILESTONE_XP = 300;
 
 export const READING_EMOJIS = {
   unprocessed: '📥',
@@ -223,7 +224,6 @@ export const DEFAULT_SETTINGS: XPSettings = {
     { name: 'Supervision meeting',             xp: 30 },
     { name: 'Research or lab meeting',         xp: 20 },
     { name: 'Conference day',                  xp: 50 },
-    { name: 'Grant writing session',           xp: 40 },
   ],
   tierNames: ['Dormant','Stirring','Kindling','Breaking','Wisp','Flicker','Blaze','Inferno','Drake','Wyrm','Dragon','Nova'],
   statusBarIcon: '⚗️',

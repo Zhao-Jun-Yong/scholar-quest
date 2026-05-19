@@ -1,5 +1,5 @@
 import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
-import { DEFAULT_MILESTONE_TEMPLATES, MAX_MANUAL_ACTIVITY_XP } from './constants';
+import { DEFAULT_MILESTONE_TEMPLATES, MAX_MANUAL_ACTIVITY_XP, MAX_MILESTONE_XP } from './constants';
 import type ScholarQuestPlugin from './main';
 
 export class ScholarQuestSettings extends PluginSettingTab {
@@ -73,6 +73,10 @@ export class ScholarQuestSettings extends PluginSettingTab {
 
     // Milestone Templates
     containerEl.createEl('h3', { text: 'Milestone Templates' });
+    containerEl.createEl('p', {
+      text: `Customise milestone names and XP values per project type. XP is capped at ${MAX_MILESTONE_XP}.`,
+      cls: 'setting-item-description',
+    });
     for (const [type, template] of Object.entries(this.plugin.settings.projectTemplates)) {
       const details = containerEl.createEl('details');
       details.createEl('summary').setText(type);
@@ -86,6 +90,17 @@ export class ScholarQuestSettings extends PluginSettingTab {
         nameInput.value = milestone.name;
         nameInput.style.flex = '1';
         nameInput.onchange = async () => { milestone.name = nameInput.value; await this.save(); };
+
+        const xpInput = row.createEl('input');
+        xpInput.type = 'number';
+        xpInput.value = String(milestone.xp);
+        xpInput.min = '1';
+        xpInput.max = String(MAX_MILESTONE_XP);
+        xpInput.style.width = '60px';
+        xpInput.onchange = async () => {
+          const n = Math.min(parseInt(xpInput.value) || 1, MAX_MILESTONE_XP);
+          milestone.xp = n; await this.save();
+        };
 
         const removeBtn = row.createEl('button');
         removeBtn.setText('×');
