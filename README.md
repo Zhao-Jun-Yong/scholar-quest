@@ -23,6 +23,19 @@ An [Obsidian](https://obsidian.md) plugin that gamifies academic work with XP, l
 - **Status bar** — ambient level indicator: `Lv 7 · ████░░ · +30 today`
 - **Fully configurable** — vault paths, tags, milestone templates, and tier names all editable in settings
 
+## Installation
+
+**Community plugin catalog** *(pending Obsidian review)*
+Settings → Community plugins → Browse → search "Scholar Quest"
+
+**BRAT** *(available now — recommended for early adopters)*
+1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) from the community catalog
+2. Open BRAT settings → Add Beta Plugin → enter `Zhao-Jun-Yong/scholar-quest`
+3. Reload Obsidian
+
+**Manual**
+Download `main.js` and `manifest.json` from the [latest release](https://github.com/Zhao-Jun-Yong/scholar-quest/releases/latest), place both in `.obsidian/plugins/scholar-quest/`, and reload Obsidian.
+
 ## Getting Started
 
 1. **Install** the plugin (Settings → Community plugins → Browse → search "Scholar Quest")
