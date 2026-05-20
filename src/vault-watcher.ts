@@ -123,84 +123,114 @@ export class VaultWatcher {
     const data = this.engine.getData();
     const cache = this.metadataCache.getFileCache(file);
     const frontmatter = (cache?.frontmatter as Record<string, unknown>) ?? null;
-    const rawAtomTags = cache?.frontmatter?.[this.settings.atomNoteTagField];
-    const atomTags: string[] = Array.isArray(rawAtomTags) ? rawAtomTags : [];
-    const rawProjectTags = cache?.frontmatter?.[this.settings.projectTagField];
-    const projectTags: string[] = Array.isArray(rawProjectTags) ? rawProjectTags : [];
-    const newKeywords = this.extractKeywords(frontmatter);
+
+    const inSources = this.isInFolder(file.path, this.settings.sourcesFolder);
+    const inIdeas = this.isInFolder(file.path, this.settings.ideasFolder);
+    const inProjects = this.isInFolder(file.path, this.settings.projectsFolder);
+
+    // B2 + B3: skip files outside all tracked folders entirely
+    if (!inSources && !inIdeas && !inProjects) return;
+
     const snapshot = data.snapshots[file.path];
+    const newKeywords = this.extractKeywords(frontmatter);
 
     // Reading progress (sources folder only)
-    if (this.isInFolder(file.path, this.settings.sourcesFolder) && snapshot) {
-      const progress = this.detectReadingProgress(snapshot.keywords, newKeywords);
-      if (progress === 'skimmed') {
-        await this.engine.awardXP(
-          this.settings.xpPaperSkimmed, 'paper-skimmed', `Skimmed: ${file.basename}`, file.path
-        );
-      } else if (progress === 'completed') {
-        await this.engine.awardXP(
-          this.settings.xpPaperCompleted, 'paper-completed', `Completed: ${file.basename}`, file.path
-        );
+    if (inSources) {
+      if (snapshot) {
+        const progress = this.detectReadingProgress(snapshot.keywords, newKeywords);
+        if (progress === 'skimmed') {
+          await this.engine.awardXP(
+            this.settings.xpPaperSkimmed, 'paper-skimmed', `Skimmed: ${file.basename}`, file.path
+          );
+        } else if (progress === 'completed') {
+          await this.engine.awardXP(
+            this.settings.xpPaperCompleted, 'paper-completed', `Completed: ${file.basename}`, file.path
+          );
+        }
       }
+      // B4: bootstrap snapshot if missing so the next change can diff correctly
+      const content = await this.vault.read(file);
+      const wordCount = this.countWords(content);
+      data.snapshots[file.path] = {
+        wordCount,
+        linkCount: this.countWikilinks(content),
+        keywords: newKeywords,
+        peakWordCount: snapshot?.peakWordCount ?? wordCount,
+        lastDevelopmentAt: snapshot?.lastDevelopmentAt,
+      };
+      this.onUpdate?.();
+      return;
     }
 
+    // Ideas and projects folders need content for word/link counts
     const content = await this.vault.read(file);
     const newWordCount = this.countWords(content);
     const newLinkCount = this.countWikilinks(content);
 
-    // Atomic note development
-    if (
-      this.isInFolder(file.path, this.settings.ideasFolder) &&
-      this.hasTag(atomTags, this.settings.atomTag) &&
-      snapshot
-    ) {
-      if (this.shouldAwardDevelopmentXP(snapshot, newWordCount, newLinkCount)) {
-        await this.engine.awardXP(
-          this.settings.xpAtomicNoteDeveloped,
-          'atomic-note-developed',
-          `Developed: ${file.basename}`,
-          file.path
-        );
-        snapshot.lastDevelopmentAt = Date.now();
+    if (inIdeas) {
+      const rawAtomTags = cache?.frontmatter?.[this.settings.atomNoteTagField];
+      const atomTags: string[] = Array.isArray(rawAtomTags) ? rawAtomTags : [];
+
+      if (this.hasTag(atomTags, this.settings.atomTag) && snapshot) {
+        if (this.shouldAwardDevelopmentXP(snapshot, newWordCount, newLinkCount)) {
+          await this.engine.awardXP(
+            this.settings.xpAtomicNoteDeveloped,
+            'atomic-note-developed',
+            `Developed: ${file.basename}`,
+            file.path
+          );
+          snapshot.lastDevelopmentAt = Date.now();
+        }
+      }
+
+      data.snapshots[file.path] = {
+        wordCount: newWordCount,
+        linkCount: newLinkCount,
+        keywords: newKeywords,
+        peakWordCount: snapshot?.peakWordCount ?? newWordCount,
+        lastDevelopmentAt: snapshot?.lastDevelopmentAt,
+      };
+    }
+
+    if (inProjects) {
+      const rawProjectTags = cache?.frontmatter?.[this.settings.projectTagField];
+      const projectTags: string[] = Array.isArray(rawProjectTags) ? rawProjectTags : [];
+      const manuscriptTag = this.settings.projectTags['manuscript'];
+
+      if (snapshot && this.hasTag(projectTags, manuscriptTag)) {
+        const xp = this.writingProgressXP(snapshot.peakWordCount, newWordCount);
+        if (xp > 0) {
+          await this.engine.awardXP(xp, 'writing-progress', `Writing: ${file.basename}`, file.path);
+        }
+
+        const today = this.engine.getTodayDate();
+        if (snapshot.dailyWritingDate !== today) {
+          snapshot.dailyWritingDate = today;
+          snapshot.dailyWritingStart = snapshot.wordCount;
+          snapshot.writingBonusAwarded = false;
+        }
+        const dailyProgress = newWordCount - (snapshot.dailyWritingStart ?? newWordCount);
+        const bonusThreshold = this.settings.writingSessionBonusThreshold ?? 500;
+        const bonusXP = this.settings.xpWritingSessionBonus ?? 50;
+        if (!snapshot.writingBonusAwarded && dailyProgress >= bonusThreshold) {
+          await this.engine.awardXP(bonusXP, 'writing-progress', `Writing session bonus: ${file.basename}`, file.path);
+          snapshot.writingBonusAwarded = true;
+        }
+
+        data.snapshots[file.path] = {
+          wordCount: newWordCount,
+          linkCount: newLinkCount,
+          keywords: newKeywords,
+          peakWordCount: Math.max(snapshot.peakWordCount ?? 0, newWordCount),
+          lastDevelopmentAt: snapshot.lastDevelopmentAt,
+          dailyWritingDate: snapshot.dailyWritingDate,
+          dailyWritingStart: snapshot.dailyWritingStart,
+          writingBonusAwarded: snapshot.writingBonusAwarded,
+        };
       }
     }
 
-    // Writing progress (manuscript files only)
-    const manuscriptTag = this.settings.projectTags['manuscript'];
-    if (snapshot && this.hasTag(projectTags, manuscriptTag)) {
-      const xp = this.writingProgressXP(snapshot.peakWordCount, newWordCount);
-      if (xp > 0) {
-        await this.engine.awardXP(xp, 'writing-progress', `Writing: ${file.basename}`, file.path);
-      }
-
-      // Daily session bonus: 50 XP once per file per day when 500+ words above daily start
-      const today = this.engine.getTodayDate();
-      if (snapshot.dailyWritingDate !== today) {
-        snapshot.dailyWritingDate = today;
-        snapshot.dailyWritingStart = snapshot.wordCount;
-        snapshot.writingBonusAwarded = false;
-      }
-      const dailyProgress = newWordCount - (snapshot.dailyWritingStart ?? newWordCount);
-      const bonusThreshold = this.settings.writingSessionBonusThreshold ?? 500;
-      const bonusXP = this.settings.xpWritingSessionBonus ?? 50;
-      if (!snapshot.writingBonusAwarded && dailyProgress >= bonusThreshold) {
-        await this.engine.awardXP(bonusXP, 'writing-progress', `Writing session bonus: ${file.basename}`, file.path);
-        snapshot.writingBonusAwarded = true;
-      }
-    }
-
-    // Update snapshot — preserve daily writing fields set above
     this.onUpdate?.();
-    data.snapshots[file.path] = {
-      wordCount: newWordCount,
-      linkCount: newLinkCount,
-      keywords: newKeywords,
-      peakWordCount: Math.max(snapshot?.peakWordCount ?? 0, newWordCount),
-      lastDevelopmentAt: snapshot?.lastDevelopmentAt,
-      dailyWritingDate: snapshot?.dailyWritingDate,
-      dailyWritingStart: snapshot?.dailyWritingStart,
-      writingBonusAwarded: snapshot?.writingBonusAwarded,
-    };
   }
 
   async scanVault(awardXP: boolean): Promise<{ papers: number; notes: number }> {

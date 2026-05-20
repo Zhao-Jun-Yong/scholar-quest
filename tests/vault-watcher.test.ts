@@ -312,3 +312,53 @@ describe('VaultWatcher.scanVault', () => {
     expect(snapshots['Atlas/Sources/paper.md']).toBeDefined();
   });
 });
+
+describe('VaultWatcher.onMetadataChange — B2/B3/B4 fixes', () => {
+  const makeEngine = (snapshots: Record<string, any> = {}) => ({
+    awardXP: jest.fn(async () => {}),
+    getData: () => ({ snapshots }),
+  } as any);
+
+  it('B4: bootstraps snapshot on first metadata change for sources file with no existing snapshot', async () => {
+    const snapshots: Record<string, any> = {};
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'some content') } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { keywords: ['📥 inbox'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Atlas/Sources/paper.md', basename: 'paper', stat: {} } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(snapshots['Atlas/Sources/paper.md']).toBeDefined();
+    expect(engine.awardXP).not.toHaveBeenCalled();
+  });
+
+  it('B3: does not write snapshot for files outside all tracked folders', async () => {
+    const snapshots: Record<string, any> = {};
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'content') } as any;
+    const metadataCache = { getFileCache: () => ({ frontmatter: {} }) } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Calendar/2026-05-20.md', basename: '2026-05-20', stat: {} } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(snapshots['Calendar/2026-05-20.md']).toBeUndefined();
+    expect(vault.read).not.toHaveBeenCalled();
+  });
+
+  it('B2: does not call vault.read for files outside tracked folders', async () => {
+    const snapshots: Record<string, any> = {};
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'content') } as any;
+    const metadataCache = { getFileCache: () => ({ frontmatter: {} }) } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Daily/2026-05-20.md', basename: '2026-05-20', stat: {} } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(vault.read).not.toHaveBeenCalled();
+  });
+});
