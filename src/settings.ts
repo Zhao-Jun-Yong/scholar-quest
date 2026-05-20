@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
+import { App, ButtonComponent, Notice, PluginSettingTab, Setting } from 'obsidian';
 import { DEFAULT_MILESTONE_TEMPLATES, MAX_MANUAL_ACTIVITY_XP, MAX_MILESTONE_XP } from './constants';
 import type ScholarQuestPlugin from './main';
 
@@ -19,23 +19,76 @@ export class ScholarQuestSettings extends PluginSettingTab {
     if (desc) el.createEl('p', { text: desc, cls: 'setting-item-description' });
   }
 
+  private subsection(el: HTMLElement, title: string): void {
+    const p = el.createEl('p', { text: title });
+    p.style.cssText = 'margin: 16px 0 2px; font-size: 0.8em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);';
+  }
+
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
     containerEl.createEl('h2', { text: 'Scholar Quest' });
 
-    // ── Vault Locations ──────────────────────────────────────────────────────
-    this.section(containerEl, 'Vault Locations',
-      'Where your notes live. Click "Scan Vault" after changing any path here.');
+    // ── Vault Configuration ──────────────────────────────────────────────────
+    // Folders, reading tags, and note tags all determine what the vault scan
+    // picks up, so they live together under one Save/Discard flow.
+    this.section(containerEl, 'Vault Configuration',
+      'Define where your notes live and how Scholar Quest identifies them. Save changes before running a scan.');
 
-    this.addTextSetting(containerEl, 'Sources folder', 'Papers, lectures, and other source notes', 'sourcesFolder');
-    this.addTextSetting(containerEl, 'Ideas folder', 'Atomic / permanent notes', 'ideasFolder');
-    this.addTextSetting(containerEl, 'Projects folder', 'Project files tracked for milestones', 'projectsFolder');
+    const DRAFT_KEYS = [
+      'sourcesFolder', 'ideasFolder', 'projectsFolder',
+      'readingStatusField', 'readingTagUnprocessed', 'readingTagSkimmed', 'readingTagCompleted',
+      'atomTag', 'atomNoteTagField',
+    ] as const;
+
+    const draft: Record<string, string> = {};
+    for (const k of DRAFT_KEYS) draft[k] = (this.plugin.settings as any)[k];
+
+    let saveBtn: ButtonComponent | undefined;
+    const updateSaveBtn = () => {
+      const dirty = DRAFT_KEYS.some(k => draft[k] !== (this.plugin.settings as any)[k]);
+      if (dirty) saveBtn?.setCta(); else saveBtn?.removeCta();
+    };
+
+    const addDraftField = (name: string, desc: string, key: string) =>
+      new Setting(containerEl).setName(name).setDesc(desc).addText(t =>
+        t.setValue(draft[key]).onChange(v => { draft[key] = v; updateSaveBtn(); })
+      );
+
+    this.subsection(containerEl, 'Folder paths');
+    addDraftField('Sources folder', 'Papers, lectures, and other source notes', 'sourcesFolder');
+    addDraftField('Ideas folder', 'Atomic / permanent notes', 'ideasFolder');
+    addDraftField('Projects folder', 'Project files tracked for milestones', 'projectsFolder');
+
+    this.subsection(containerEl, 'Reading tracking');
+    addDraftField('Reading status field', 'Frontmatter property that holds the reading status (e.g. keywords, status)', 'readingStatusField');
+    addDraftField('Unprocessed tag', 'Tag value meaning "not yet read" — used as baseline (e.g. 📥, inbox, toread)', 'readingTagUnprocessed');
+    addDraftField('Skimmed tag', 'Tag value meaning "in progress / skimmed" — awards skimmed XP (e.g. 👀, reading)', 'readingTagSkimmed');
+    addDraftField('Completed tag', 'Tag value meaning "fully read" — awards completed XP (e.g. ✅, done)', 'readingTagCompleted');
+
+    this.subsection(containerEl, 'Note tracking');
+    addDraftField('Atomic note tag', 'Tag that marks a note as atomic (e.g. cards/atom)', 'atomTag');
+    addDraftField('Atomic note tag field', 'Frontmatter property that contains the atomic note tag (e.g. tags)', 'atomNoteTagField');
+
+    new Setting(containerEl)
+      .addButton(b => b
+        .setButtonText('Discard')
+        .onClick(() => this.display()))
+      .addButton(b => {
+        saveBtn = b;
+        b.setButtonText('Save Configuration')
+          .onClick(async () => {
+            for (const k of DRAFT_KEYS) (this.plugin.settings as any)[k] = draft[k];
+            await this.save();
+            new Notice('Configuration saved. Run Scan Vault to update tracking.');
+            this.display();
+          });
+      });
 
     new Setting(containerEl)
       .setName('Scan Vault')
       .setDesc(this.plugin.pluginData.hasVaultScanned
-        ? 'Rebuild baselines from current folder paths. No XP is awarded on rescans.'
+        ? 'Rebuild baselines from current configuration. No XP is awarded on rescans.'
         : 'First-time scan: awards XP for papers already read and atomic notes already created.')
       .addButton(b => {
         b.setButtonText(this.plugin.pluginData.hasVaultScanned ? 'Rescan Vault' : 'Scan Vault & Import History');
@@ -46,28 +99,6 @@ export class ScholarQuestSettings extends PluginSettingTab {
           this.display();
         });
       });
-
-    // ── Reading Tracking ─────────────────────────────────────────────────────
-    this.section(containerEl, 'Reading Tracking',
-      'The frontmatter field and tag values Scholar Quest reads to detect reading progress.');
-
-    this.addTextSetting(containerEl, 'Reading status field',
-      'Frontmatter property that holds the reading status (e.g. keywords, status)', 'readingStatusField');
-    this.addTextSetting(containerEl, 'Unprocessed tag',
-      'Tag value meaning "not yet read" — used as the baseline (e.g. 📥, inbox, toread)', 'readingTagUnprocessed');
-    this.addTextSetting(containerEl, 'Skimmed tag',
-      'Tag value meaning "in progress / skimmed" — awards skimmed XP (e.g. 👀, reading)', 'readingTagSkimmed');
-    this.addTextSetting(containerEl, 'Completed tag',
-      'Tag value meaning "fully read" — awards completed XP (e.g. ✅, done)', 'readingTagCompleted');
-
-    // ── Note Tracking ────────────────────────────────────────────────────────
-    this.section(containerEl, 'Note Tracking',
-      'How Scholar Quest identifies atomic notes in your ideas folder.');
-
-    this.addTextSetting(containerEl, 'Atomic note tag',
-      'Tag that marks a note as atomic (e.g. cards/atom)', 'atomTag');
-    this.addTextSetting(containerEl, 'Atomic note tag field',
-      'Frontmatter property that contains the atomic note tag (e.g. tags)', 'atomNoteTagField');
 
     // ── Project Tracking ─────────────────────────────────────────────────────
     this.section(containerEl, 'Project Tracking',
