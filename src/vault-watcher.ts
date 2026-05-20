@@ -202,4 +202,55 @@ export class VaultWatcher {
       writingBonusAwarded: snapshot?.writingBonusAwarded,
     };
   }
+
+  async scanVault(awardXP: boolean): Promise<{ papers: number; notes: number }> {
+    const data = this.engine.getData();
+    const files = this.vault.getMarkdownFiles();
+    let papers = 0;
+    let notes = 0;
+
+    for (const file of files) {
+      const cache = this.metadataCache.getFileCache(file);
+      const frontmatter = (cache?.frontmatter as Record<string, unknown>) ?? null;
+      const content = await this.vault.read(file);
+      const wordCount = this.countWords(content);
+      const linkCount = this.countWikilinks(content);
+      const keywords = this.extractKeywords(frontmatter);
+
+      if (this.isInFolder(file.path, this.settings.sourcesFolder)) {
+        if (awardXP) {
+          const isCompleted = keywords.some(k => k.includes(this.settings.readingTagCompleted));
+          const isSkimmed = keywords.some(k => k.includes(this.settings.readingTagSkimmed));
+          if (isCompleted) {
+            await this.engine.awardXP(
+              this.settings.xpPaperCompleted, 'paper-completed',
+              `History: ${file.basename}`, file.path
+            );
+          } else if (isSkimmed) {
+            await this.engine.awardXP(
+              this.settings.xpPaperSkimmed, 'paper-skimmed',
+              `History: ${file.basename}`, file.path
+            );
+          }
+        }
+        data.snapshots[file.path] = { wordCount, linkCount, keywords, peakWordCount: wordCount };
+        papers++;
+      } else if (this.isInFolder(file.path, this.settings.ideasFolder)) {
+        const rawTags = cache?.frontmatter?.[this.settings.atomNoteTagField];
+        const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
+        if (this.hasTag(tags, this.settings.atomTag) && !this.isSummaryFile(file.name)) {
+          if (awardXP) {
+            await this.engine.awardXP(
+              this.settings.xpAtomicNoteCreated, 'atomic-note-created',
+              `History: ${file.basename}`, file.path
+            );
+          }
+          notes++;
+        }
+        data.snapshots[file.path] = { wordCount, linkCount, keywords, peakWordCount: wordCount };
+      }
+    }
+
+    return { papers, notes };
+  }
 }

@@ -208,3 +208,107 @@ describe('VaultWatcher.detectReadingProgress — custom tags', () => {
     expect(w.detectReadingProgress(['inbox'], ['inbox', 'flagged'])).toBeNull();
   });
 });
+
+describe('VaultWatcher.scanVault', () => {
+  const makeEngine = () => {
+    const awarded: Array<{ xp: number; type: string }> = [];
+    const snapshots: Record<string, any> = {};
+    return {
+      engine: {
+        awardXP: jest.fn(async (xp: number, type: string) => { awarded.push({ xp, type }); }),
+        getData: () => ({ snapshots }),
+      } as any,
+      awarded,
+      snapshots,
+    };
+  };
+
+  const makeFile = (path: string) => ({
+    path,
+    basename: path.split('/').pop()!.replace('.md', ''),
+    name: path.split('/').pop()!,
+    stat: { ctime: 0 },
+  });
+
+  it('awards paper-completed XP for completed papers on first scan', async () => {
+    const { engine, awarded, snapshots } = makeEngine();
+    const file = makeFile('Atlas/Sources/paper.md');
+    const vault = { getMarkdownFiles: () => [file], read: async () => 'body text' } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { keywords: ['✅ done'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const result = await w.scanVault(true);
+
+    expect(awarded).toContainEqual({ xp: 50, type: 'paper-completed' });
+    expect(result.papers).toBe(1);
+    expect(snapshots['Atlas/Sources/paper.md']).toBeDefined();
+  });
+
+  it('awards paper-skimmed XP for skimmed papers on first scan', async () => {
+    const { engine, awarded } = makeEngine();
+    const file = makeFile('Atlas/Sources/paper2.md');
+    const vault = { getMarkdownFiles: () => [file], read: async () => 'body' } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { keywords: ['👀 reading'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    await w.scanVault(true);
+
+    expect(awarded).toContainEqual({ xp: 20, type: 'paper-skimmed' });
+  });
+
+  it('does not award XP for unprocessed papers even on first scan', async () => {
+    const { engine, awarded } = makeEngine();
+    const file = makeFile('Atlas/Sources/paper3.md');
+    const vault = { getMarkdownFiles: () => [file], read: async () => 'body' } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { keywords: ['📥 inbox'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    await w.scanVault(true);
+
+    expect(awarded).toHaveLength(0);
+  });
+
+  it('awards atomic-note-created XP for atom notes on first scan', async () => {
+    const { engine, awarded } = makeEngine();
+    const file = makeFile('Atlas/Ideas/my-note.md');
+    const vault = { getMarkdownFiles: () => [file], read: async () => 'content' } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { tags: ['cards/atom'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const result = await w.scanVault(true);
+
+    expect(awarded).toContainEqual({ xp: 30, type: 'atomic-note-created' });
+    expect(result.notes).toBe(1);
+  });
+
+  it('skips summary_ files in ideasFolder', async () => {
+    const { engine, awarded } = makeEngine();
+    const file = makeFile('Atlas/Ideas/summary_Smith2023.md');
+    const vault = { getMarkdownFiles: () => [file], read: async () => 'content' } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { tags: ['cards/atom'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    await w.scanVault(true);
+
+    expect(awarded).toHaveLength(0);
+  });
+
+  it('does not award XP when awardXP is false (rescan)', async () => {
+    const { engine, awarded, snapshots } = makeEngine();
+    const file = makeFile('Atlas/Sources/paper.md');
+    const vault = { getMarkdownFiles: () => [file], read: async () => 'body' } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { keywords: ['✅ done'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    await w.scanVault(false);
+
+    expect(awarded).toHaveLength(0);
+    expect(snapshots['Atlas/Sources/paper.md']).toBeDefined();
+  });
+});
