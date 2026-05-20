@@ -77,6 +77,25 @@ export default class ScholarQuestPlugin extends Plugin {
       })
     );
 
+    this.registerEvent(
+      this.app.vault.on('rename', (file, oldPath) => {
+        if (!(file instanceof TFile)) return;
+        const data = this.engine.getData();
+        if (data.snapshots[oldPath]) {
+          data.snapshots[file.path] = data.snapshots[oldPath];
+          delete data.snapshots[oldPath];
+        }
+      })
+    );
+
+    this.registerEvent(
+      this.app.vault.on('delete', file => {
+        if (!(file instanceof TFile)) return;
+        const data = this.engine.getData();
+        delete data.snapshots[file.path];
+      })
+    );
+
     this.registerInterval(window.setInterval(() => this.statusBar.update(), 30_000));
 
     this.addCommand({
