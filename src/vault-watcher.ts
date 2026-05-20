@@ -1,6 +1,5 @@
 import { MetadataCache, TFile, Vault } from 'obsidian';
 import { FileSnapshot, XPSettings } from './types';
-import { READING_EMOJIS } from './constants';
 import { XPEngine } from './xp-engine';
 
 export class VaultWatcher {
@@ -40,10 +39,11 @@ export class VaultWatcher {
   }
 
   detectReadingProgress(old: string[], next: string[]): 'skimmed' | 'completed' | null {
-    const hadCompleted = old.some(k => k.includes(READING_EMOJIS.completed));
-    const hasCompleted = next.some(k => k.includes(READING_EMOJIS.completed));
-    const hadSkimmed = old.some(k => k.includes(READING_EMOJIS.skimmed));
-    const hasSkimmed = next.some(k => k.includes(READING_EMOJIS.skimmed));
+    const { readingTagSkimmed: skim, readingTagCompleted: done } = this.settings;
+    const hadCompleted = old.some(k => k.includes(done));
+    const hasCompleted = next.some(k => k.includes(done));
+    const hadSkimmed = old.some(k => k.includes(skim));
+    const hasSkimmed = next.some(k => k.includes(skim));
 
     if (hasCompleted && !hadCompleted) return 'completed';
     if (hasSkimmed && !hadSkimmed && !hasCompleted) return 'skimmed';

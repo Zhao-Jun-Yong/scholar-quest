@@ -179,3 +179,32 @@ describe('VaultWatcher.writingProgressXP', () => {
     expect(w.writingProgressXP(500, 650)).toBe(20); // 150 words = 1 full threshold * 20 XP
   });
 });
+
+describe('VaultWatcher.detectReadingProgress — custom tags', () => {
+  const makeWatcherWithTags = (skimmed: string, completed: string) =>
+    new VaultWatcher({} as any, {
+      ...DEFAULT_SETTINGS,
+      readingTagSkimmed: skimmed,
+      readingTagCompleted: completed,
+    }, {} as any, {} as any);
+
+  it('detects skimmed using custom tag', () => {
+    const w = makeWatcherWithTags('reading', 'done');
+    expect(w.detectReadingProgress(['inbox'], ['inbox', 'reading'])).toBe('skimmed');
+  });
+
+  it('detects completed using custom tag', () => {
+    const w = makeWatcherWithTags('reading', 'done');
+    expect(w.detectReadingProgress(['reading'], ['done'])).toBe('completed');
+  });
+
+  it('returns null when custom completed tag was already present', () => {
+    const w = makeWatcherWithTags('reading', 'done');
+    expect(w.detectReadingProgress(['done'], ['done'])).toBeNull();
+  });
+
+  it('does not fire on unrelated tag changes', () => {
+    const w = makeWatcherWithTags('reading', 'done');
+    expect(w.detectReadingProgress(['inbox'], ['inbox', 'flagged'])).toBeNull();
+  });
+});
