@@ -202,6 +202,9 @@ export const DEFAULT_SETTINGS: XPSettings = {
   projectsFolder: 'Efforts',
   atomTag: 'cards/atom',
   readingStatusField: 'keywords',
+  readingTagUnprocessed: '📥',
+  readingTagSkimmed: '👀',
+  readingTagCompleted: '✅',
   atomNoteTagField: 'tags',
   projectTagField: 'tags',
   projectTags: {

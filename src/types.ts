@@ -60,6 +60,9 @@ export interface XPSettings {
   projectsFolder: string;
   atomTag: string;
   readingStatusField: string;
+  readingTagUnprocessed: string;
+  readingTagSkimmed: string;
+  readingTagCompleted: string;
   atomNoteTagField: string;
   projectTagField: string;
   projectTags: Record<string, string>;
@@ -107,4 +110,5 @@ export interface PluginData {
   archivedProjects: string[];
   lastPresenceDate?: string;
   currentStreak?: number;
+  hasVaultScanned?: boolean;
 }
