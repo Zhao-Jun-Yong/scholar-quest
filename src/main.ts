@@ -186,6 +186,19 @@ export default class ScholarQuestPlugin extends Plugin {
     }
   }
 
+  async runVaultScan(): Promise<void> {
+    const isFirst = !this.pluginData.hasVaultScanned;
+    const { papers, notes } = await this.watcher.scanVault(isFirst);
+    this.pluginData.hasVaultScanned = true;
+    await this.savePluginData();
+
+    const action = isFirst ? 'Vault import complete' : 'Vault rescan complete';
+    const detail = isFirst
+      ? `Found ${papers} papers, ${notes} atomic notes. XP awarded for your reading history.`
+      : `Rebuilt baselines for ${papers} papers, ${notes} atomic notes. No XP awarded.`;
+    new Notice(`📚 ${action} — ${detail}`, 6000);
+  }
+
   private async initProjectMilestones(): Promise<void> {
     const files = this.app.vault.getMarkdownFiles();
     for (const file of files) {
@@ -236,6 +249,7 @@ export default class ScholarQuestPlugin extends Plugin {
       archivedProjects: saved?.archivedProjects ?? [],
       lastPresenceDate: saved?.lastPresenceDate,
       currentStreak: saved?.currentStreak ?? 0,
+      hasVaultScanned: saved?.hasVaultScanned ?? false,
     };
 
     if (saved?.unlockedAchievements === undefined) {
