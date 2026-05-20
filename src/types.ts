@@ -26,6 +26,8 @@ export interface FileSnapshot {
   dailyWritingDate?: string;
   dailyWritingStart?: number;
   writingBonusAwarded?: boolean;
+  completedAt?: number;
+  skimmedAt?: number;
 }
 
 export interface MilestoneItem {
@@ -48,6 +50,7 @@ export interface ManualActivity {
 export interface MilestoneTemplate {
   name: string;
   xp: number;
+  builtin?: boolean;
 }
 
 export interface ProjectTemplate {

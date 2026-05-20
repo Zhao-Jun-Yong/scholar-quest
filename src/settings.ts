@@ -1,5 +1,5 @@
 import { App, ButtonComponent, Notice, PluginSettingTab, Setting } from 'obsidian';
-import { DEFAULT_MILESTONE_TEMPLATES, MAX_MANUAL_ACTIVITY_XP, MAX_MILESTONE_XP } from './constants';
+import { DEFAULT_MILESTONE_TEMPLATES, MANUAL_ACTIVITY_CATALOG, MAX_MILESTONE_XP, MAX_USER_MILESTONE_XP } from './constants';
 import type ScholarQuestPlugin from './main';
 
 export class ScholarQuestSettings extends PluginSettingTab {
@@ -126,50 +126,116 @@ export class ScholarQuestSettings extends PluginSettingTab {
 
     // ── Manual Log Activities ────────────────────────────────────────────────
     this.section(containerEl, 'Manual Log Activities',
-      `For academic work done outside Obsidian. Max ${MAX_MANUAL_ACTIVITY_XP} XP per activity · once per day per activity.`);
+      'Activities available in the manual log (once per day each). "Other" (+30 XP) is always shown and cannot be removed.');
 
-    for (const activity of this.plugin.settings.manualActivities) {
-      new Setting(containerEl)
-        .setName(activity.name)
-        .addText(t => {
-          t.setPlaceholder('Activity name').setValue(activity.name);
-          t.inputEl.style.width = '180px';
-          t.onChange(async v => { activity.name = v; await this.save(); });
-        })
-        .addText(t => {
-          t.setPlaceholder('XP').setValue(String(activity.xp));
-          t.inputEl.type = 'number';
-          t.inputEl.min = '1';
-          t.inputEl.max = String(MAX_MANUAL_ACTIVITY_XP);
-          t.inputEl.style.width = '60px';
-          t.onChange(async v => {
-            const n = Math.min(parseInt(v) || 1, MAX_MANUAL_ACTIVITY_XP);
-            activity.xp = n; await this.save();
-          });
-        })
-        .addExtraButton(b => b
-          .setIcon('trash')
-          .setTooltip('Remove activity')
-          .onClick(async () => {
-            this.plugin.settings.manualActivities =
-              this.plugin.settings.manualActivities.filter(a => a !== activity);
+    // Personal list — updated in place; never triggers a full display() re-render
+    const personalListEl = containerEl.createDiv();
+    const catalogBtns = new Map<string, HTMLButtonElement>();
+
+    const renderPersonalList = () => {
+      personalListEl.empty();
+      if (this.plugin.settings.manualActivities.length === 0) {
+        personalListEl.createEl('p', {
+          text: 'Your list is empty. Add activities from the catalog below.',
+          cls: 'setting-item-description',
+        }).style.cssText = 'margin: 0 0 8px; font-style: italic;';
+      }
+      for (const activity of this.plugin.settings.manualActivities) {
+        new Setting(personalListEl)
+          .setName(`${activity.name}  (+${activity.xp} XP)`)
+          .addExtraButton(b => b
+            .setIcon('trash')
+            .setTooltip('Remove from my list')
+            .onClick(async () => {
+              this.plugin.settings.manualActivities =
+                this.plugin.settings.manualActivities.filter(a => a !== activity);
+              await this.save();
+              renderPersonalList();
+              syncCatalogBtns();
+            }));
+      }
+    };
+
+    const syncCatalogBtns = () => {
+      for (const [name, btn] of catalogBtns) {
+        const added = this.plugin.settings.manualActivities.some(m => m.name === name);
+        btn.textContent = added ? 'Added' : '+ Add';
+        btn.disabled = added;
+        btn.style.opacity = added ? '0.4' : '1';
+      }
+    };
+
+    renderPersonalList();
+
+    // Catalog browser — collapsed by default
+    const catalogDetails = containerEl.createEl('details');
+    catalogDetails.style.cssText = 'margin-top: 12px; padding: 0 12px 12px; background: var(--background-secondary); border-radius: 6px;';
+    const catalogSummary = catalogDetails.createEl('summary');
+    catalogSummary.style.cssText = 'padding: 10px 0; cursor: pointer; font-size: 0.8em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);';
+    catalogSummary.setText('Browse catalog');
+    const catalogWrap = catalogDetails.createDiv();
+
+    const searchInput = catalogWrap.createEl('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search activities…';
+    searchInput.style.cssText = 'width: 100%; padding: 6px 8px; margin-bottom: 10px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: var(--background-primary); color: var(--text-normal);';
+
+    const catalogListEl = catalogWrap.createDiv();
+
+    const renderCatalog = (query: string) => {
+      catalogListEl.empty();
+      catalogBtns.clear();
+      const q = query.toLowerCase().trim();
+      const filtered = MANUAL_ACTIVITY_CATALOG.filter(a =>
+        !q || a.name.toLowerCase().includes(q) || a.category.toLowerCase().includes(q)
+      );
+
+      const byCategory = new Map<string, typeof filtered>();
+      for (const a of filtered) {
+        if (!byCategory.has(a.category)) byCategory.set(a.category, []);
+        byCategory.get(a.category)!.push(a);
+      }
+
+      if (byCategory.size === 0) {
+        catalogListEl.createEl('p', { text: 'No activities match.' })
+          .style.cssText = 'color: var(--text-muted); font-style: italic; margin: 4px 0;';
+        return;
+      }
+
+      for (const [category, activities] of byCategory) {
+        catalogListEl.createEl('p', { text: category })
+          .style.cssText = 'margin: 10px 0 4px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);';
+
+        for (const a of activities) {
+          const row = catalogListEl.createDiv();
+          row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-top: 1px solid var(--background-modifier-border);';
+
+          row.createSpan({ text: `${a.name}  (+${a.xp} XP)` })
+            .style.cssText = 'font-size: 0.9em; color: var(--text-normal);';
+
+          const alreadyAdded = this.plugin.settings.manualActivities.some(m => m.name === a.name);
+          const addBtn = row.createEl('button', { text: alreadyAdded ? 'Added' : '+ Add' });
+          addBtn.disabled = alreadyAdded;
+          addBtn.style.cssText = `font-size: 0.8em; padding: 2px 8px; opacity: ${alreadyAdded ? '0.4' : '1'};`;
+          catalogBtns.set(a.name, addBtn);
+
+          addBtn.onclick = async () => {
+            if (this.plugin.settings.manualActivities.some(m => m.name === a.name)) return;
+            this.plugin.settings.manualActivities.push({ name: a.name, xp: a.xp });
             await this.save();
-            this.display();
-          }));
-    }
+            renderPersonalList();
+            syncCatalogBtns();
+          };
+        }
+      }
+    };
 
-    new Setting(containerEl)
-      .addButton(b => b
-        .setButtonText('+ Add activity')
-        .onClick(async () => {
-          this.plugin.settings.manualActivities.push({ name: 'New activity', xp: 40 });
-          await this.save();
-          this.display();
-        }));
+    renderCatalog('');
+    searchInput.oninput = () => renderCatalog(searchInput.value);
 
     // ── Milestone Templates ──────────────────────────────────────────────────
     this.section(containerEl, 'Milestone Templates',
-      `Customise milestones per project type. XP is capped at ${MAX_MILESTONE_XP}.`);
+      `Built-in milestone XP values are fixed. Custom milestones are capped at ${MAX_USER_MILESTONE_XP} XP.`);
 
     for (const [type, template] of Object.entries(this.plugin.settings.projectTemplates)) {
       const details = containerEl.createEl('details');
@@ -180,24 +246,36 @@ export class ScholarQuestSettings extends PluginSettingTab {
       summary.setText(`${type}  (${template.milestones.length} milestones)`);
 
       for (const milestone of template.milestones) {
+        const isBuiltin = milestone.builtin === true;
         const row = new Setting(details)
           .addText(t => {
             t.setPlaceholder('Milestone name').setValue(milestone.name);
             t.inputEl.style.flex = '1';
-            t.onChange(async v => { milestone.name = v; await this.save(); });
-          })
-          .addText(t => {
+            if (isBuiltin) {
+              t.setDisabled(true);
+            } else {
+              t.onChange(async v => { milestone.name = v; await this.save(); });
+            }
+          });
+
+        if (isBuiltin) {
+          // Read-only XP badge for built-in milestones
+          const xpBadge = row.settingEl.createSpan({ text: `${milestone.xp} XP` });
+          xpBadge.style.cssText = 'font-size: 0.85em; color: var(--text-muted); margin-right: 8px; white-space: nowrap;';
+          row.settingEl.querySelector('.setting-item-control')?.prepend(xpBadge);
+        } else {
+          row.addText(t => {
             t.setPlaceholder('XP').setValue(String(milestone.xp));
             t.inputEl.type = 'number';
             t.inputEl.min = '1';
-            t.inputEl.max = String(MAX_MILESTONE_XP);
+            t.inputEl.max = String(MAX_USER_MILESTONE_XP);
             t.inputEl.style.width = '60px';
             t.onChange(async v => {
-              const n = Math.min(parseInt(v) || 1, MAX_MILESTONE_XP);
+              const n = Math.min(parseInt(v) || 1, MAX_USER_MILESTONE_XP);
               milestone.xp = n; await this.save();
             });
-          })
-          .addExtraButton(b => b
+          });
+          row.addExtraButton(b => b
             .setIcon('trash')
             .setTooltip('Remove milestone')
             .onClick(async () => {
@@ -205,6 +283,8 @@ export class ScholarQuestSettings extends PluginSettingTab {
               await this.save();
               this.display();
             }));
+        }
+
         row.settingEl.style.borderTop = 'none';
       }
 
@@ -229,22 +309,6 @@ export class ScholarQuestSettings extends PluginSettingTab {
         }
       };
     }
-
-    // ── XP Values ────────────────────────────────────────────────────────────
-    const xpDetails = containerEl.createEl('details');
-    xpDetails.style.cssText = 'margin: 4px 0 16px; padding: 0 12px 8px; background: var(--background-secondary); border-radius: 6px;';
-    const xpSummary = xpDetails.createEl('summary');
-    xpSummary.style.cssText = 'padding: 10px 0; cursor: pointer; font-weight: 500; color: var(--text-muted);';
-    xpSummary.setText('XP Values  (expand to edit)');
-
-    this.addNumberSetting(xpDetails, 'Paper skimmed', 'XP per paper skimmed', 'xpPaperSkimmed');
-    this.addNumberSetting(xpDetails, 'Paper completed', 'XP per paper fully read', 'xpPaperCompleted');
-    this.addNumberSetting(xpDetails, 'Atomic note created', 'XP for creating a new atomic note', 'xpAtomicNoteCreated');
-    this.addNumberSetting(xpDetails, 'Atomic note developed', 'XP each time a note is significantly developed', 'xpAtomicNoteDeveloped');
-    this.addNumberSetting(xpDetails, 'Writing progress (per 100 words)', 'XP awarded per 100 net new words', 'xpWritingProgressPer100Words');
-    this.addNumberSetting(xpDetails, 'Writing session bonus', 'Bonus XP for writing a lot in one day', 'xpWritingSessionBonus');
-    this.addNumberSetting(xpDetails, 'Writing session bonus threshold (words)', 'Net new words needed to trigger the bonus', 'writingSessionBonusThreshold');
-    this.addNumberSetting(xpDetails, 'Daily presence', 'XP for opening Obsidian each day', 'xpDailyPresence');
 
     // ── Danger Zone ──────────────────────────────────────────────────────────
     this.section(containerEl, 'Danger Zone');
@@ -285,19 +349,4 @@ export class ScholarQuestSettings extends PluginSettingTab {
       }));
   }
 
-  private addNumberSetting(el: HTMLElement, name: string, desc: string, key: string): void {
-    new Setting(el).setName(name).setDesc(desc).addText(t => {
-      t.inputEl.type = 'number';
-      t.inputEl.min = '0';
-      t.inputEl.style.width = '70px';
-      t.setValue(String((this.plugin.settings as any)[key] ?? 0));
-      t.onChange(async v => {
-        const n = parseInt(v);
-        if (!isNaN(n) && n >= 0) {
-          (this.plugin.settings as any)[key] = n;
-          await this.save();
-        }
-      });
-    });
-  }
 }

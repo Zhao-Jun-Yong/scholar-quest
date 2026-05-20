@@ -1,5 +1,6 @@
 import { MetadataCache, TFile, Vault } from 'obsidian';
 import { FileSnapshot, XPSettings } from './types';
+import { ATOMIC_NOTE_XP_TIERS } from './constants';
 import { XPEngine } from './xp-engine';
 
 export class VaultWatcher {
@@ -76,6 +77,21 @@ export class VaultWatcher {
     return true;
   }
 
+  atomicNoteXP(baseXP: number, todayCount: number): number {
+    for (const tier of ATOMIC_NOTE_XP_TIERS) {
+      if (todayCount < tier.threshold) return Math.round(baseXP / tier.divisor);
+    }
+    return Math.round(baseXP / ATOMIC_NOTE_XP_TIERS[ATOMIC_NOTE_XP_TIERS.length - 1].divisor);
+  }
+
+  todayAtomicNoteCount(): number {
+    const today = this.engine.getTodayDate();
+    return this.engine.getData().activities.filter(
+      a => a.type === 'atomic-note-created' &&
+        new Date(a.timestamp).toISOString().split('T')[0] === today
+    ).length;
+  }
+
   writingProgressXP(peakWordCount: number, newWordCount: number): number {
     if (newWordCount <= peakWordCount) return 0;
     const newWords = newWordCount - peakWordCount;
@@ -101,12 +117,8 @@ export class VaultWatcher {
       this.hasTag(tags, this.settings.atomTag) &&
       !this.isSummaryFile(file.name)
     ) {
-      await this.engine.awardXP(
-        this.settings.xpAtomicNoteCreated,
-        'atomic-note-created',
-        `New note: ${file.basename}`,
-        file.path
-      );
+      const xp = this.atomicNoteXP(this.settings.xpAtomicNoteCreated, this.todayAtomicNoteCount());
+      await this.engine.awardXP(xp, 'atomic-note-created', `New note: ${file.basename}`, file.path);
     }
 
     const content = await this.vault.read(file);
@@ -138,11 +150,14 @@ export class VaultWatcher {
     if (inSources) {
       if (snapshot) {
         const progress = this.detectReadingProgress(snapshot.keywords, newKeywords);
-        if (progress === 'skimmed') {
+        if (progress === 'skimmed' && !snapshot.skimmedAt) {
+          snapshot.skimmedAt = Date.now();
           await this.engine.awardXP(
             this.settings.xpPaperSkimmed, 'paper-skimmed', `Skimmed: ${file.basename}`, file.path
           );
-        } else if (progress === 'completed') {
+        } else if (progress === 'completed' && !snapshot.completedAt) {
+          snapshot.completedAt = Date.now();
+          if (!snapshot.skimmedAt) snapshot.skimmedAt = Date.now();
           await this.engine.awardXP(
             this.settings.xpPaperCompleted, 'paper-completed', `Completed: ${file.basename}`, file.path
           );
@@ -157,6 +172,8 @@ export class VaultWatcher {
         keywords: newKeywords,
         peakWordCount: snapshot?.peakWordCount ?? wordCount,
         lastDevelopmentAt: snapshot?.lastDevelopmentAt,
+        completedAt: snapshot?.completedAt,
+        skimmedAt: snapshot?.skimmedAt,
       };
       this.onUpdate?.();
       return;
@@ -248,9 +265,10 @@ export class VaultWatcher {
       const keywords = this.extractKeywords(frontmatter);
 
       if (this.isInFolder(file.path, this.settings.sourcesFolder)) {
+        const isCompleted = keywords.some(k => k.includes(this.settings.readingTagCompleted));
+        const isSkimmed = keywords.some(k => k.includes(this.settings.readingTagSkimmed));
+        const now = Date.now();
         if (awardXP) {
-          const isCompleted = keywords.some(k => k.includes(this.settings.readingTagCompleted));
-          const isSkimmed = keywords.some(k => k.includes(this.settings.readingTagSkimmed));
           if (isCompleted) {
             await this.engine.awardXP(
               this.settings.xpPaperCompleted, 'paper-completed',
@@ -263,7 +281,11 @@ export class VaultWatcher {
             );
           }
         }
-        data.snapshots[file.path] = { wordCount, linkCount, keywords, peakWordCount: wordCount };
+        data.snapshots[file.path] = {
+          wordCount, linkCount, keywords, peakWordCount: wordCount,
+          completedAt: isCompleted ? now : undefined,
+          skimmedAt: (isCompleted || isSkimmed) ? now : undefined,
+        };
         papers++;
       } else if (this.isInFolder(file.path, this.settings.ideasFolder)) {
         const rawTags = cache?.frontmatter?.[this.settings.atomNoteTagField];

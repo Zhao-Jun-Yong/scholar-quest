@@ -26,7 +26,12 @@ export class ManualLogger extends Modal {
     contentEl.empty();
     contentEl.createEl('h2', { text: 'Log academic activity' });
 
-    for (const activity of this.settings.manualActivities) {
+    const allActivities = [
+      ...this.settings.manualActivities,
+      { name: 'Other', xp: 30 },
+    ];
+
+    for (const activity of allActivities) {
       const alreadyDone = this.isLoggedToday(activity.name);
       const btn = contentEl.createEl('button', {
         text: alreadyDone

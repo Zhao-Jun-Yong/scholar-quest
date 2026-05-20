@@ -1,7 +1,105 @@
-import { XPSettings, MilestoneTemplate } from './types';
+import { ManualActivity, XPSettings, MilestoneTemplate } from './types';
 
 export const MAX_MANUAL_ACTIVITY_XP = 200;
 export const MAX_MILESTONE_XP = 300;
+export const MAX_USER_MILESTONE_XP = 200;
+
+// Diminishing returns for atomic note creation XP within a single day.
+// todayCount is the number of atomic-note-created entries already logged today
+// *before* the current award. Returns the XP to award for the next note.
+export const ATOMIC_NOTE_XP_TIERS: { threshold: number; divisor: number }[] = [
+  { threshold: 10, divisor: 1 },   // notes 1–10:  full XP (÷1)
+  { threshold: 30, divisor: 2 },   // notes 11–30: half XP (÷2)
+  { threshold: Infinity, divisor: 6 }, // notes 31+:  trickle (÷6)
+];
+
+export interface CatalogActivity {
+  name: string;
+  xp: number;
+  category: string;
+}
+
+export const MANUAL_ACTIVITY_CATALOG: CatalogActivity[] = [
+  // Wet lab & experimental
+  { category: 'Wet lab & experimental', name: 'Lab / fieldwork session', xp: 40 },
+  { category: 'Wet lab & experimental', name: 'Fieldwork / sample collection session', xp: 50 },
+  { category: 'Wet lab & experimental', name: 'Instrumentation / equipment run', xp: 30 },
+  { category: 'Wet lab & experimental', name: 'Protocol development or optimization', xp: 35 },
+  { category: 'Wet lab & experimental', name: 'Animal care / husbandry session', xp: 20 },
+
+  // Computational & data
+  { category: 'Computational & data', name: 'Data analysis / coding session', xp: 40 },
+  { category: 'Computational & data', name: 'Data cleaning / QC session', xp: 35 },
+  { category: 'Computational & data', name: 'Bioinformatics or pipeline setup', xp: 40 },
+  { category: 'Computational & data', name: 'Database or registry curation session', xp: 30 },
+  { category: 'Computational & data', name: 'Simulation setup and run', xp: 35 },
+  { category: 'Computational & data', name: 'Code review / refactor session', xp: 25 },
+
+  // Meetings & communication
+  { category: 'Meetings & communication', name: 'Research or lab meeting', xp: 20 },
+  { category: 'Meetings & communication', name: 'Supervision meeting', xp: 30 },
+  { category: 'Meetings & communication', name: 'Collaboration / co-investigator meeting', xp: 25 },
+  { category: 'Meetings & communication', name: 'Journal club session', xp: 25 },
+  { category: 'Meetings & communication', name: 'Department seminar attended', xp: 20 },
+  { category: 'Meetings & communication', name: 'Advisory or stakeholder meeting', xp: 30 },
+  { category: 'Meetings & communication', name: 'Ethics / IRB committee meeting', xp: 25 },
+  { category: 'Meetings & communication', name: 'Conference day', xp: 50 },
+  { category: 'Meetings & communication', name: 'Online conference / symposium attended', xp: 35 },
+
+  // Teaching & mentoring
+  { category: 'Teaching & mentoring', name: 'Lecture or class delivered', xp: 50 },
+  { category: 'Teaching & mentoring', name: 'Tutorial / lab practical facilitated', xp: 35 },
+  { category: 'Teaching & mentoring', name: 'Assignment marking / grading session', xp: 30 },
+  { category: 'Teaching & mentoring', name: 'Student advising session', xp: 20 },
+  { category: 'Teaching & mentoring', name: 'Mentoring session (informal)', xp: 20 },
+  { category: 'Teaching & mentoring', name: 'Office hours held', xp: 15 },
+  { category: 'Teaching & mentoring', name: 'Exam or assessment preparation', xp: 25 },
+
+  // Service & editorial
+  { category: 'Service & editorial', name: 'Grant or fellowship panel review session', xp: 40 },
+  { category: 'Service & editorial', name: 'Journal editorial work session', xp: 35 },
+  { category: 'Service & editorial', name: 'Conference organising work session', xp: 25 },
+  { category: 'Service & editorial', name: 'Committee meeting attended', xp: 20 },
+  { category: 'Service & editorial', name: 'Administrative / compliance task session', xp: 15 },
+
+  // Outreach & public engagement
+  { category: 'Outreach & public engagement', name: 'Public talk or outreach event delivered', xp: 50 },
+  { category: 'Outreach & public engagement', name: 'Science communication writing session', xp: 30 },
+  { category: 'Outreach & public engagement', name: 'School or community outreach visit', xp: 40 },
+  { category: 'Outreach & public engagement', name: 'Media interview or press engagement', xp: 30 },
+  { category: 'Outreach & public engagement', name: 'Social media science communication', xp: 15 },
+
+  // Professional development
+  { category: 'Professional development', name: 'Workshop or short course attended', xp: 35 },
+  { category: 'Professional development', name: 'Online training / webinar attended', xp: 20 },
+
+  // Participant & clinical research
+  { category: 'Participant & clinical research', name: 'Participant recruitment / screening session', xp: 25 },
+  { category: 'Participant & clinical research', name: 'Clinical or assessment session', xp: 40 },
+  { category: 'Participant & clinical research', name: 'Research interview conducted', xp: 35 },
+  { category: 'Participant & clinical research', name: 'Focus group facilitated', xp: 40 },
+  { category: 'Participant & clinical research', name: 'Survey administration session', xp: 20 },
+
+  // Literature & library work
+  { category: 'Literature & library work', name: 'Systematic literature search session', xp: 30 },
+  { category: 'Literature & library work', name: 'Reference manager curation session', xp: 15 },
+  { category: 'Literature & library work', name: 'Preprint / rapid reading sweep', xp: 20 },
+
+  // Writing (outside tracked manuscript files)
+  { category: 'Writing (off-vault)', name: 'Ethics or IRB application writing session', xp: 35 },
+  { category: 'Writing (off-vault)', name: 'Response to reviewers drafting session', xp: 40 },
+  { category: 'Writing (off-vault)', name: 'Data management plan writing session', xp: 25 },
+  { category: 'Writing (off-vault)', name: 'Preregistration drafting session', xp: 35 },
+  { category: 'Writing (off-vault)', name: 'Policy brief or technical report writing session', xp: 35 },
+];
+
+export const DEFAULT_MANUAL_ACTIVITIES: ManualActivity[] = [
+  { name: 'Research or lab meeting',          xp: 20 },
+  { name: 'Lab / fieldwork session',           xp: 40 },
+  { name: 'Data analysis / coding session',    xp: 40 },
+  { name: 'Systematic literature search session', xp: 30 },
+  { name: 'Conference day',                    xp: 50 },
+];
 
 export const READING_EMOJIS = {
   unprocessed: '📥',
@@ -26,7 +124,7 @@ export const TIER_LEVEL_RANGES = [
 
 export const MAX_ACTIVITIES_LOG = 500;
 
-export const DEFAULT_MILESTONE_TEMPLATES: Record<string, MilestoneTemplate[]> = {
+const RAW_MILESTONE_TEMPLATES: Record<string, Omit<MilestoneTemplate, 'builtin'>[]> = {
   manuscript: [
     { name: 'Outline drafted', xp: 50 },
     { name: 'Introduction written', xp: 80 },
@@ -125,6 +223,13 @@ export const DEFAULT_MILESTONE_TEMPLATES: Record<string, MilestoneTemplate[]> = 
     { name: 'Activity delivered / published', xp: 100 },
   ],
 };
+
+export const DEFAULT_MILESTONE_TEMPLATES: Record<string, MilestoneTemplate[]> = Object.fromEntries(
+  Object.entries(RAW_MILESTONE_TEMPLATES).map(([type, milestones]) => [
+    type,
+    milestones.map(m => ({ ...m, builtin: true as const })),
+  ])
+);
 
 import { AchievementDef } from './types';
 
@@ -241,13 +346,7 @@ export const DEFAULT_SETTINGS: XPSettings = {
       { milestones: v.map(m => ({ ...m })) },
     ])
   ),
-  manualActivities: [
-    { name: 'Data analysis / coding session', xp: 40 },
-    { name: 'Lab / fieldwork session',        xp: 40 },
-    { name: 'Supervision meeting',             xp: 30 },
-    { name: 'Research or lab meeting',         xp: 20 },
-    { name: 'Conference day',                  xp: 50 },
-  ],
+  manualActivities: DEFAULT_MANUAL_ACTIVITIES.map(a => ({ ...a })),
   tierNames: ['Dormant','Stirring','Kindling','Breaking','Wisp','Flicker','Blaze','Inferno','Drake','Wyrm','Dragon','Nova'],
   statusBarIcon: '⚗️',
 };

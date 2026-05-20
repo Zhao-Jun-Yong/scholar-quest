@@ -18,10 +18,10 @@ An [Obsidian](https://obsidian.md) plugin that gamifies academic work with XP, l
 - **Writing session bonus** — earn a one-time daily bonus when you write 500+ net new words in a manuscript
 - **Daily presence** — small XP reward for opening Obsidian each day
 - **Tier avatar progression** — 12 visual tiers from dormant egg to Nova; your avatar evolves in the sidebar as you level up
-- **Manual log** — quickly log off-Obsidian activities (data analysis, fieldwork) in ~2 seconds
+- **Manual log** — browse a searchable catalog of 52 activities across 10 discipline categories (wet lab, fieldwork, teaching, outreach, clinical research, and more); build a personal shortlist; log in ~2 seconds via the command palette
 - **Level system** — 12 tiers, levels 1–60; XP per level scales linearly to level 20, then flattens at 6,000 XP/level for long-term play
 - **Status bar** — ambient level indicator: `Lv 7 · ████░░ · +30 today`
-- **Fully configurable** — vault paths, tags, XP values, milestone templates, and tier names all editable in settings
+- **Fully configurable** — vault paths, tags, milestone templates, and tier names all editable in settings
 
 ## Getting Started
 
@@ -35,15 +35,15 @@ An [Obsidian](https://obsidian.md) plugin that gamifies academic work with XP, l
 
 | Activity | XP | How |
 |---|---|---|
-| Paper skimmed | 20 | `keywords` frontmatter: `📥 → 👀` |
-| Paper completed | 50 | `keywords` frontmatter: `→ ✅` |
-| New atomic note | 30 | New file with atom tag created |
-| Atomic note developed | 30 | +50 words or +1 wikilink (once/hr per file) |
+| Paper skimmed | 20 | `keywords` frontmatter: `📥 → 👀` (once per paper) |
+| Paper completed | 50 | `keywords` frontmatter: `→ ✅` (once per paper) |
+| New atomic note | 30 → 15 → 5 | New file with atom tag; diminishing returns after 10/30 per day |
+| Atomic note developed | 10 | +50 words or +1 wikilink (once/hr per file) |
 | Writing progress | 20 | Per 100 net new words in a manuscript file |
 | Writing session bonus | 50 | Once per day when 500+ words written |
 | Daily presence | 5 | Opening Obsidian each day |
 | Project milestones | 20–300 | Via sidebar or "Complete milestone" command |
-| Manual activities | configurable | Via "Log activity" command |
+| Manual activities | 15–50 | Via "Log activity" command — 52-activity catalog |
 
 ## Tier Progression
 
@@ -101,9 +101,8 @@ Go to **Settings → Scholar Quest** to configure:
 
 - **Vault paths** — sources folder, ideas folder, projects folder
 - **Tags** — atom note tag, project type tags
-- **XP values** — per activity type, writing session bonus threshold, daily presence XP
-- **Milestone templates** — add, remove, or rename milestones per project type
-- **Manual activities** — custom activities with custom XP values
+- **Manual log activities** — build a personal shortlist from a 52-activity catalog; browse by category or search
+- **Milestone templates** — add custom milestones per project type (built-in milestone XP values are fixed; custom milestones capped at 200 XP)
 
 ## Project Types
 
@@ -129,7 +128,7 @@ npm test       # run tests
 If you use Scholar Quest in your work, please cite it:
 
 ```
-Yong, Z.-J. (2026). Scholar Quest: Gamify your academic workflow with XP and levels (v1.0.0).
+Yong, Z.-J. (2026). Scholar Quest: Gamify your academic workflow with XP and levels (v1.2.0).
 https://doi.org/10.5281/zenodo.19467725
 ```
 

@@ -98,7 +98,7 @@ export class XPEngine {
     return this.data.milestones[filePath];
   }
 
-  async initMilestoneRecord(filePath: string, projectType: string): Promise<void> {
+  async initMilestoneRecord(filePath: string, projectType: string, save = true): Promise<void> {
     const template = this.settings.projectTemplates[projectType];
     if (!template) return;
     this.data.milestones[filePath] = {
@@ -106,7 +106,7 @@ export class XPEngine {
       filePath,
       milestones: template.milestones.map(m => ({ name: m.name, xp: m.xp })),
     };
-    await this.saveCallback();
+    if (save) await this.saveCallback();
   }
 
   async completeMilestone(filePath: string, milestoneName: string): Promise<number> {

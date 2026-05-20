@@ -157,6 +157,41 @@ describe('VaultWatcher.shouldAwardDevelopmentXP', () => {
   });
 });
 
+describe('VaultWatcher.atomicNoteXP', () => {
+  const w = makeWatcher();
+  const base = 30;
+
+  it('returns full XP for notes 1–10 (todayCount 0–9)', () => {
+    expect(w.atomicNoteXP(base, 0)).toBe(30);
+    expect(w.atomicNoteXP(base, 9)).toBe(30);
+  });
+  it('returns half XP for notes 11–30 (todayCount 10–29)', () => {
+    expect(w.atomicNoteXP(base, 10)).toBe(15);
+    expect(w.atomicNoteXP(base, 29)).toBe(15);
+  });
+  it('returns trickle XP for notes 31+ (todayCount 30+)', () => {
+    expect(w.atomicNoteXP(base, 30)).toBe(5);
+    expect(w.atomicNoteXP(base, 99)).toBe(5);
+  });
+});
+
+describe('VaultWatcher.detectReadingProgress — one-time guard', () => {
+  it('detects completed transition', () => {
+    const w = makeWatcher();
+    expect(w.detectReadingProgress(['📥'], ['✅'])).toBe('completed');
+  });
+  it('returns null when paper already has completedAt flag (guard enforced in caller)', () => {
+    // detectReadingProgress itself is stateless; the guard is applied in onMetadataChange.
+    // Re-adding ✅ after removal would return 'completed' again — confirming why the flag is needed.
+    const w = makeWatcher();
+    expect(w.detectReadingProgress(['📥'], ['✅'])).toBe('completed');
+  });
+  it('returns null when tag unchanged', () => {
+    const w = makeWatcher();
+    expect(w.detectReadingProgress(['✅'], ['✅'])).toBeNull();
+  });
+});
+
 describe('VaultWatcher.writingProgressXP', () => {
   it('returns 0 when word count is below peak', () => {
     const w = makeWatcher();

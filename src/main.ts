@@ -8,7 +8,7 @@ import { ScholarQuestSettings } from './settings';
 import { OnboardingModal, OnboardingData } from './onboarding-modal';
 import { SidebarView, SIDEBAR_VIEW_TYPE } from './sidebar-view';
 import { PluginData, XPSettings } from './types';
-import { DEFAULT_SETTINGS, ACHIEVEMENTS } from './constants';
+import { DEFAULT_MILESTONE_TEMPLATES, DEFAULT_SETTINGS, ACHIEVEMENTS } from './constants';
 import { checkAchievement, checkNewAchievements } from './achievement-engine';
 
 const DEFAULT_DATA: PluginData = {
@@ -31,6 +31,9 @@ export default class ScholarQuestPlugin extends Plugin {
   watcher!: VaultWatcher;
   statusBar!: StatusBar;
   private initialSaveComplete = false;
+  private vaultReady = false;
+  private sidebarDebounceTimer: number | null = null;
+  private metadataDebounce = new Map<string, number>();
 
   async onload(): Promise<void> {
     await this.loadPluginData();
@@ -73,7 +76,14 @@ export default class ScholarQuestPlugin extends Plugin {
 
     this.registerEvent(
       this.app.metadataCache.on('changed', file => {
-        this.watcher.onMetadataChange(file);
+        if (!this.vaultReady) return;
+        const existing = this.metadataDebounce.get(file.path);
+        if (existing) clearTimeout(existing);
+        const timer = window.setTimeout(() => {
+          this.metadataDebounce.delete(file.path);
+          this.watcher.onMetadataChange(file);
+        }, 300);
+        this.metadataDebounce.set(file.path, timer);
       })
     );
 
@@ -135,6 +145,7 @@ export default class ScholarQuestPlugin extends Plugin {
     this.addSettingTab(new ScholarQuestSettings(this.app, this));
 
     this.app.workspace.onLayoutReady(() => {
+      this.vaultReady = true;
       this.initProjectMilestones();
       if (!this.pluginData.hasOnboarded) {
         this.openOnboarding();
@@ -145,6 +156,8 @@ export default class ScholarQuestPlugin extends Plugin {
   }
 
   async onunload(): Promise<void> {
+    if (this.sidebarDebounceTimer) clearTimeout(this.sidebarDebounceTimer);
+    for (const timer of this.metadataDebounce.values()) clearTimeout(timer);
     this.app.workspace.detachLeavesOfType(SIDEBAR_VIEW_TYPE);
   }
 
@@ -220,6 +233,7 @@ export default class ScholarQuestPlugin extends Plugin {
 
   private async initProjectMilestones(): Promise<void> {
     const files = this.app.vault.getMarkdownFiles();
+    let anyAdded = false;
     for (const file of files) {
       if (!file.path.startsWith(this.settings.projectsFolder + '/')) continue;
       if (this.engine.getMilestoneRecord(file.path)) continue;
@@ -227,8 +241,12 @@ export default class ScholarQuestPlugin extends Plugin {
       const rawTags = cache?.frontmatter?.tags;
       const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
       const projectType = this.detectProjectType(tags);
-      if (projectType) await this.engine.initMilestoneRecord(file.path, projectType);
+      if (projectType) {
+        await this.engine.initMilestoneRecord(file.path, projectType, false);
+        anyAdded = true;
+      }
     }
+    if (anyAdded) await this.savePluginData();
   }
 
   private detectProjectType(tags: string[]): string | null {
@@ -239,9 +257,13 @@ export default class ScholarQuestPlugin extends Plugin {
   }
 
   private refreshSidebar(): void {
-    this.app.workspace.getLeavesOfType(SIDEBAR_VIEW_TYPE).forEach(leaf => {
-      if (leaf.view instanceof SidebarView) leaf.view.render();
-    });
+    if (this.sidebarDebounceTimer) clearTimeout(this.sidebarDebounceTimer);
+    this.sidebarDebounceTimer = window.setTimeout(() => {
+      this.sidebarDebounceTimer = null;
+      this.app.workspace.getLeavesOfType(SIDEBAR_VIEW_TYPE).forEach(leaf => {
+        if (leaf.view instanceof SidebarView) leaf.view.render();
+      });
+    }, 400);
   }
 
   async loadPluginData(): Promise<void> {
@@ -270,6 +292,18 @@ export default class ScholarQuestPlugin extends Plugin {
       currentStreak: saved?.currentStreak ?? 0,
       hasVaultScanned: saved?.hasVaultScanned ?? false,
     };
+
+    // Migration: mark built-in milestones and enforce default XP values
+    for (const [type, template] of Object.entries(this.settings.projectTemplates)) {
+      const defaults = DEFAULT_MILESTONE_TEMPLATES[type] ?? [];
+      for (const milestone of template.milestones) {
+        const def = defaults.find(d => d.name === milestone.name);
+        if (def) {
+          milestone.builtin = true;
+          milestone.xp = def.xp;
+        }
+      }
+    }
 
     if (saved?.unlockedAchievements === undefined) {
       for (const def of ACHIEVEMENTS) {
