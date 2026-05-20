@@ -56,19 +56,19 @@ export class ScholarQuestSettings extends PluginSettingTab {
       );
 
     this.subsection(containerEl, 'Folder paths');
-    addDraftField('Sources folder', 'Papers, lectures, and other source notes', 'sourcesFolder');
-    addDraftField('Ideas folder', 'Atomic / permanent notes', 'ideasFolder');
-    addDraftField('Projects folder', 'Project files tracked for milestones', 'projectsFolder');
+    addDraftField('Sources folder', 'Folder containing reference notes (papers, books, articles). Scholar Quest tracks reading progress here. e.g. References, Literature, Reading', 'sourcesFolder');
+    addDraftField('Notes folder', 'Folder containing your developed notes. XP is awarded when tagged notes are created here. e.g. Notes, Ideas, Wiki', 'ideasFolder');
+    addDraftField('Projects folder', 'Folder containing project files. Milestones are tracked for files with a recognised project tag. e.g. Projects, Work, Research', 'projectsFolder');
 
     this.subsection(containerEl, 'Reading tracking');
-    addDraftField('Reading status field', 'Frontmatter property that holds the reading status (e.g. keywords, status)', 'readingStatusField');
-    addDraftField('Unprocessed tag', 'Tag value meaning "not yet read" — used as baseline (e.g. 📥, inbox, toread)', 'readingTagUnprocessed');
-    addDraftField('Skimmed tag', 'Tag value meaning "in progress / skimmed" — awards skimmed XP (e.g. 👀, reading)', 'readingTagSkimmed');
-    addDraftField('Completed tag', 'Tag value meaning "fully read" — awards completed XP (e.g. ✅, done)', 'readingTagCompleted');
+    addDraftField('Reading status field', 'Frontmatter property used to track reading progress. e.g. status, stage, keywords', 'readingStatusField');
+    addDraftField('Unread value', 'Value meaning the source has not been read — no XP awarded. e.g. unread, inbox, 📥', 'readingTagUnprocessed');
+    addDraftField('Skimmed value', 'Value meaning the source has been partially read — awards skimmed XP. e.g. reading, in-progress, 👀', 'readingTagSkimmed');
+    addDraftField('Completed value', 'Value meaning the source has been fully read — awards completed XP. e.g. done, read, ✅', 'readingTagCompleted');
 
     this.subsection(containerEl, 'Note tracking');
-    addDraftField('Atomic note tag', 'Tag that marks a note as atomic (e.g. cards/atom)', 'atomTag');
-    addDraftField('Atomic note tag field', 'Frontmatter property that contains the atomic note tag (e.g. tags)', 'atomNoteTagField');
+    addDraftField('Note tag', 'Tag that identifies a developed note eligible for XP. e.g. note, permanent, evergreen', 'atomTag');
+    addDraftField('Note tag field', 'Frontmatter property containing the note tag above. e.g. tags, type', 'atomNoteTagField');
 
     new Setting(containerEl)
       .addButton(b => b

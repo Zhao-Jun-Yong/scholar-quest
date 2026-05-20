@@ -95,11 +95,11 @@ Unlocked achievements appear as pixel art chips in the sidebar; locked ones are 
 
 Scholar Quest works with any structure, but is designed around:
 
-- **Paper notes** in a sources folder (`Atlas/Sources/` by default), with a `keywords` frontmatter field tracking reading status via emoji (`📥 → 👀 → ✅`)
-- **Atomic notes** in an ideas folder (`Atlas/Ideas/` by default), tagged with a card tag (`cards/atom` by default)
+- **Reference notes** in a sources folder (`Atlas/Sources/` by default), with a frontmatter field tracking reading progress via three values — unread, skimmed, and completed (emoji or text, your choice)
+- **Developed notes** in a notes folder (`Atlas/Ideas/` by default), tagged to mark them as eligible for XP
 - **Project notes** in a projects folder (`Efforts/` by default), tagged by project type (e.g. `project/manuscript`)
 
-All paths and tags are configurable in Settings → Scholar Quest.
+All folder paths, tag names, and the frontmatter field names are configurable in Settings → Scholar Quest.
 
 ## Commands
 
@@ -112,8 +112,8 @@ All paths and tags are configurable in Settings → Scholar Quest.
 
 Go to **Settings → Scholar Quest** to configure:
 
-- **Vault paths** — sources folder, ideas folder, projects folder
-- **Tags** — atom note tag, project type tags
+- **Vault paths** — sources folder, notes folder, projects folder
+- **Tags** — note tag, project type tags
 - **Manual log activities** — build a personal shortlist from a 52-activity catalog; browse by category or search
 - **Milestone templates** — add custom milestones per project type (built-in milestone XP values are fixed; custom milestones capped at 200 XP)
 
