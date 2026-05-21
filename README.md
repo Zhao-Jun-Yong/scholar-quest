@@ -9,13 +9,13 @@ An [Obsidian](https://obsidian.md) plugin that gamifies academic work with XP, l
 
 ## Features
 
-- **Auto-detected XP** — earn points for reading papers, creating and developing atomic notes, and writing manuscript drafts
+- **Auto-detected XP** — earn points for reading papers, creating and developing atomic notes, and writing in project files
 - **Career calibration** — onboarding wizard estimates your starting level from your academic history across 6 categories (credentials, publications, grants & patents, recognition, supervision & service); re-opens with previous values pre-filled so you only update what has changed
 - **Milestone system** — 14 project types with predefined milestone templates; mark milestones complete via the sidebar or command palette
 - **Sidebar panel** — tier avatar, XP progress bar, daily word count with session bonus tracker, streak counter, recent activity feed, achievements, and active projects with pending milestones
 - **Achievement system** — 36 pixel art achievements tied to XP milestones, level thresholds, activity counts, and career events
 - **Daily streak** — open Obsidian each day to build a streak; displayed with a pixel art flame icon from day 2
-- **Writing session bonus** — earn a one-time daily bonus when you write 500+ net new words in a manuscript
+- **Writing session bonus** — earn a one-time daily bonus when you write 500+ net new words in any project file
 - **Daily presence** — small XP reward for opening Obsidian each day
 - **Tier avatar progression** — 12 visual tiers from dormant egg to Nova; your avatar evolves in the sidebar as you level up
 - **Manual log** — browse a searchable catalog of 52 activities across 10 discipline categories (wet lab, fieldwork, teaching, outreach, clinical research, and more); build a personal shortlist; log in ~2 seconds via the command palette
@@ -52,7 +52,7 @@ Download `main.js` and `manifest.json` from the [latest release](https://github.
 | Paper completed | 50 | Reading status field set to ✅ for the first time (once per paper) |
 | New atomic note | 30 → 15 → 5 | New file with atom tag; diminishing returns after 10/30 per day |
 | Atomic note developed | 10 | +50 words or +1 wikilink (once/hr per file) |
-| Writing progress | 20 | Per 100 net new words in a manuscript file |
+| Writing progress | 20 | Per 100 net new words above peak in any project file |
 | Writing session bonus | 50 | Once per day when 500+ words written |
 | Daily presence | 5 | Opening Obsidian each day |
 | Project milestones | 20–300 | Via sidebar or "Complete milestone" command |

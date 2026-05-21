@@ -205,13 +205,6 @@ const RAW_MILESTONE_TEMPLATES: Record<string, Omit<MilestoneTemplate, 'builtin'>
     { name: 'First contribution delivered', xp: 60 },
     { name: 'Term / cycle completed', xp: 80 },
   ],
-  'research-program': [
-    { name: 'Kickoff / inception report', xp: 50 },
-    { name: 'Progress report 1 submitted', xp: 80 },
-    { name: 'Progress report 2 submitted', xp: 80 },
-    { name: 'Final report submitted', xp: 150 },
-    { name: 'Program completed / renewed', xp: 200 },
-  ],
   outreach: [
     { name: 'Concept / pitch prepared', xp: 40 },
     { name: 'Content created', xp: 80 },
@@ -333,7 +326,6 @@ export const DEFAULT_SETTINGS: XPSettings = {
     supervision: 'project/supervision',
     service: 'project/service',
     outreach: 'project/outreach',
-    'research-program': 'project/research-program',
   },
   xpPaperSkimmed: 20,
   xpPaperCompleted: 50,

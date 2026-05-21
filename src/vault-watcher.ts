@@ -212,9 +212,9 @@ export class VaultWatcher {
     if (inProjects) {
       const rawProjectTags = cache?.frontmatter?.[this.settings.projectTagField];
       const projectTags: string[] = Array.isArray(rawProjectTags) ? rawProjectTags : [];
-      const manuscriptTag = this.settings.projectTags['manuscript'];
+      const knownProjectTags = Object.values(this.settings.projectTags);
 
-      if (snapshot && this.hasTag(projectTags, manuscriptTag)) {
+      if (snapshot && knownProjectTags.some(tag => this.hasTag(projectTags, tag))) {
         const xp = this.writingProgressXP(snapshot.peakWordCount, newWordCount);
         if (xp > 0) {
           await this.engine.awardXP(xp, 'writing-progress', `Writing: ${file.basename}`, file.path);
