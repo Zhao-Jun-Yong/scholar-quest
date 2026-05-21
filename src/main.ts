@@ -183,9 +183,11 @@ export default class ScholarQuestPlugin extends Plugin {
         })
         .filter((a): a is typeof ACHIEVEMENTS[0] => a !== undefined);
 
+      this.pluginData.avatarTheme = careerData.avatarTheme ?? 'purple';
       this.pluginData.hasOnboarded = true;
       await this.savePluginData();
-      new Notice(`🎓 Starting at Level ${this.pluginData.level}.`);
+      const themeName = this.pluginData.avatarTheme.charAt(0).toUpperCase() + this.pluginData.avatarTheme.slice(1);
+      new Notice(`🎓 Starting at Level ${this.pluginData.level}. Your dragon is ${themeName}!`);
       await this.awardDailyPresence();
       for (const ach of newCareerAchs) {
         new Notice(`🏆 Achievement unlocked: ${ach.name} — ${ach.description}`, 6000);
@@ -256,7 +258,7 @@ export default class ScholarQuestPlugin extends Plugin {
     return null;
   }
 
-  private refreshSidebar(): void {
+  refreshSidebar(): void {
     if (this.sidebarDebounceTimer) clearTimeout(this.sidebarDebounceTimer);
     this.sidebarDebounceTimer = window.setTimeout(() => {
       this.sidebarDebounceTimer = null;

@@ -114,4 +114,5 @@ export interface PluginData {
   lastPresenceDate?: string;
   currentStreak?: number;
   hasVaultScanned?: boolean;
+  avatarTheme?: string;
 }

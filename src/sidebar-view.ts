@@ -1,6 +1,6 @@
 import { ItemView, Notice, WorkspaceLeaf } from 'obsidian';
 import { ACHIEVEMENTS, TIER_LEVEL_RANGES } from './constants';
-import { TIER_AVATARS } from './tier-avatars';
+import { THEME_AVATARS, THEMES, AvatarTheme } from './tier-avatars';
 import { PluginData } from './types';
 import type ScholarQuestPlugin from './main';
 
@@ -50,7 +50,9 @@ export class SidebarView extends ItemView {
     header.style.cssText = 'text-align: center; margin-bottom: 12px;';
     const avatarEl = header.createDiv();
     avatarEl.style.cssText = 'width: 80px; height: 80px; margin: 0 auto 6px;';
-    avatarEl.innerHTML = TIER_AVATARS[tierIdx];
+    const theme = (this.plugin.pluginData.avatarTheme ?? 'purple') as AvatarTheme;
+    const avatars = THEME_AVATARS[THEMES.includes(theme) ? theme : 'purple'];
+    avatarEl.innerHTML = avatars[tierIdx];
     header.createDiv({ text: `Level ${level} · ${tierName}` }).style.cssText = 'font-weight: 600; font-size: 1.05em; margin-top: 4px;';
     header.createDiv({ text: `${totalXP.toLocaleString()} XP total · +${todayXP} today` }).style.cssText = 'color: var(--text-muted); font-size: 0.82em; margin-top: 2px;';
 
