@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3.1] — 2026-05-21
+
+### Bug fixes
+
+- **Writing XP was silently broken** — a typo in the default project tag (`projec/manuscript` instead of `project/manuscript`) caused writing progress XP and the daily session bonus to never trigger for manuscript files; fixed in default settings
+
+### Changes
+
+- **Writing XP extended to all project types** — writing progress XP and the daily session bonus now apply to any file tagged with a known project tag (manuscript, thesis, grant, report, conference, invited-talk, peer-review, workshop, and others), not just manuscript files
+- **Removed unfinished `research-program` project type** — milestone templates and default tag entry removed; the type was never surfaced in the UI
+
+---
+
 ## [1.3.0] — 2026-05-21
 
 ### Career calibration
