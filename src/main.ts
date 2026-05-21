@@ -5,9 +5,9 @@ import { ManualLogger } from './manual-logger';
 import { MilestoneModal } from './milestone-modal';
 import { StatusBar } from './status-bar';
 import { ScholarQuestSettings } from './settings';
-import { OnboardingModal, OnboardingData } from './onboarding-modal';
+import { OnboardingModal, emptyCareerData } from './onboarding-modal';
 import { SidebarView, SIDEBAR_VIEW_TYPE } from './sidebar-view';
-import { PluginData, XPSettings } from './types';
+import { OnboardingData, PluginData, XPSettings } from './types';
 import { DEFAULT_MILESTONE_TEMPLATES, DEFAULT_SETTINGS, ACHIEVEMENTS } from './constants';
 import { checkAchievement, checkNewAchievements } from './achievement-engine';
 
@@ -162,8 +162,17 @@ export default class ScholarQuestPlugin extends Plugin {
   }
 
   private openOnboarding(): void {
+    // Capture before modal opens so the callback closure sees the pre-open state.
+    const isReopen = !!(this.pluginData.careerData ?? this.pluginData.hasOnboarded);
+    const initialData = this.pluginData.careerData ??
+      (this.pluginData.hasOnboarded
+        ? emptyCareerData(this.pluginData.avatarTheme ?? 'purple')
+        : undefined);
+
     new OnboardingModal(this.app, this.engine, async (xp, careerData) => {
       const prev = this.pluginData.activities.find(a => a.type === 'career-init');
+      const prevXP = prev?.xp ?? 0;
+
       if (prev) {
         this.pluginData.totalXP = Math.max(0, this.pluginData.totalXP - prev.xp);
         this.pluginData.todayXP = Math.max(0, this.pluginData.todayXP - prev.xp);
@@ -184,23 +193,33 @@ export default class ScholarQuestPlugin extends Plugin {
         .filter((a): a is typeof ACHIEVEMENTS[0] => a !== undefined);
 
       this.pluginData.avatarTheme = careerData.avatarTheme ?? 'purple';
+      this.pluginData.careerData = careerData;
       this.pluginData.hasOnboarded = true;
       await this.savePluginData();
-      const themeName = this.pluginData.avatarTheme.charAt(0).toUpperCase() + this.pluginData.avatarTheme.slice(1);
-      new Notice(`🎓 Starting at Level ${this.pluginData.level}. Your dragon is ${themeName}!`);
-      await this.awardDailyPresence();
+
+      if (isReopen) {
+        const delta = xp - prevXP;
+        const sign = delta >= 0 ? '+' : '';
+        new Notice(`Career history updated — ${sign}${delta} XP (Level ${this.pluginData.level})`);
+      } else {
+        const themeName = (this.pluginData.avatarTheme ?? 'purple').charAt(0).toUpperCase()
+          + (this.pluginData.avatarTheme ?? 'purple').slice(1);
+        new Notice(`🎓 Starting at Level ${this.pluginData.level}. Your dragon is ${themeName}!`);
+        await this.awardDailyPresence();
+      }
+
       for (const ach of newCareerAchs) {
         new Notice(`🏆 Achievement unlocked: ${ach.name} — ${ach.description}`, 6000);
       }
-    }).open();
+    }, initialData).open();
   }
 
   private resolveCareerAchievements(d: OnboardingData): string[] {
     const ids: string[] = [];
-    if (d.phd || d.masters)                                      ids.push('defended');
-    if (d.invitedTalks > 0 || d.conferenceTalks > 0)            ids.push('talk-delivered');
-    if (d.grantsPI > 0 || d.grantsCoI > 0)                      ids.push('awarded');
-    if (d.firstAuthorPapers > 0 || d.coAuthorPapers > 0) {
+    if (d.phd || d.masters)                                                              ids.push('defended');
+    if (d.invitedTalks > 0 || d.conferenceTalks > 0)                                    ids.push('talk-delivered');
+    if (d.grantsPI > 0 || d.grantsCoI > 0)                                              ids.push('awarded');
+    if (d.firstAuthorPapers > 0 || d.coAuthorPapers > 0 || d.editedVolumes > 0) {
       ids.push('submitted');
       ids.push('accepted');
     }
@@ -297,6 +316,7 @@ export default class ScholarQuestPlugin extends Plugin {
       lastPresenceDate: saved?.lastPresenceDate,
       currentStreak: saved?.currentStreak ?? 0,
       hasVaultScanned: saved?.hasVaultScanned ?? false,
+      careerData: saved?.careerData,
     };
 
     // Migration: mark built-in milestones and enforce default XP values

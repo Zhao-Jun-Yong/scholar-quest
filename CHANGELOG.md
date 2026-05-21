@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.3.0] — 2026-05-21
+
+### Career calibration
+
+- **7 new career fields** — postdoctoral positions, edited volumes, software/datasets released, patents granted, major awards/honors, PhD theses examined, and editorial board roles; form now covers 19 fields across 6 categories
+- **XP reweightings** — grants as PI 600 → 900 (reflects 10–20% acceptance rates); authored books 1,200 → 2,000 (reflects humanities monograph as primary output); PhD 1,000 → 1,200
+- **Re-open pre-fill** — re-opening "Import career history" now shows previous values pre-filled; only edit what has changed; confirmation shows the net XP delta (e.g. `+1,200 XP`)
+- **UI redesign** — career form reorganised into a compact 2-column grid layout; 19 fields fit in roughly the same space as the previous 12
+- **Dragon locked on re-open** — dragon picker hidden when re-opening; replaced with a locked-dragon notice; "Start at Level 1" replaced with "Cancel" to prevent accidental XP wipe
+
+### Settings
+
+- **Removed "Unread value" setting** — the unprocessed reading tag (📥) was never read by any plugin logic; removed from settings, types, and defaults to reduce noise. Only the skimmed (👀) and completed (✅) values affect XP.
+
+---
+
 ## [1.1.0] — 2026-05-19
 
 ### New features

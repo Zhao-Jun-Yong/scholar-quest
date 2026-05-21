@@ -1,3 +1,5 @@
+import { AvatarTheme } from './tier-avatars';
+
 export type ActivityType =
   | 'paper-skimmed'
   | 'paper-completed'
@@ -63,7 +65,6 @@ export interface XPSettings {
   projectsFolder: string;
   atomTag: string;
   readingStatusField: string;
-  readingTagUnprocessed: string;
   readingTagSkimmed: string;
   readingTagCompleted: string;
   atomNoteTagField: string;
@@ -100,6 +101,35 @@ export interface AchievementDef {
   condition: AchievementCondition;
 }
 
+export interface OnboardingData {
+  // Credentials
+  phd: boolean;
+  masters: boolean;
+  postdocs: number;
+  // Publications
+  authoredBooks: number;
+  editedVolumes: number;
+  firstAuthorPapers: number;
+  coAuthorPapers: number;
+  softwareDatasets: number;
+  // Grants & patents
+  grantsPI: number;
+  grantsCoI: number;
+  patents: number;
+  // Recognition
+  invitedTalks: number;
+  conferenceTalks: number;
+  majorAwards: number;
+  // Supervision & service
+  phdStudents: number;
+  mastersStudents: number;
+  peerReviews: number;
+  thesesExamined: number;
+  editorialRoles: number;
+  // Avatar (set on first onboarding only)
+  avatarTheme: AvatarTheme;
+}
+
 export interface PluginData {
   totalXP: number;
   level: number;
@@ -115,4 +145,5 @@ export interface PluginData {
   currentStreak?: number;
   hasVaultScanned?: boolean;
   avatarTheme?: string;
+  careerData?: OnboardingData;
 }

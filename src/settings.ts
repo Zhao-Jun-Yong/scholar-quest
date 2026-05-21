@@ -37,7 +37,7 @@ export class ScholarQuestSettings extends PluginSettingTab {
 
     const DRAFT_KEYS = [
       'sourcesFolder', 'ideasFolder', 'projectsFolder',
-      'readingStatusField', 'readingTagUnprocessed', 'readingTagSkimmed', 'readingTagCompleted',
+      'readingStatusField', 'readingTagSkimmed', 'readingTagCompleted',
       'atomTag', 'atomNoteTagField',
     ] as const;
 
@@ -62,7 +62,6 @@ export class ScholarQuestSettings extends PluginSettingTab {
 
     this.subsection(containerEl, 'Reading tracking');
     addDraftField('Reading status field', 'Frontmatter property used to track reading progress. e.g. status, stage, keywords', 'readingStatusField');
-    addDraftField('Unread value', 'Value meaning the source has not been read — no XP awarded. e.g. unread, inbox, 📥', 'readingTagUnprocessed');
     addDraftField('Skimmed value', 'Value meaning the source has been partially read — awards skimmed XP. e.g. reading, in-progress, 👀', 'readingTagSkimmed');
     addDraftField('Completed value', 'Value meaning the source has been fully read — awards completed XP. e.g. done, read, ✅', 'readingTagCompleted');
 

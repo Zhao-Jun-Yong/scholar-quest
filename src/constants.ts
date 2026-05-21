@@ -101,11 +101,6 @@ export const DEFAULT_MANUAL_ACTIVITIES: ManualActivity[] = [
   { name: 'Conference day',                    xp: 50 },
 ];
 
-export const READING_EMOJIS = {
-  unprocessed: '📥',
-  skimmed: '👀',
-  completed: '✅',
-};
 
 export const TIER_LEVEL_RANGES = [
   { min: 1,  max: 5  },  // T1  Dormant
@@ -287,18 +282,30 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 export const TIER_ICONS: string[] = ['🥚','🥚','🥚','🥚','🐣','🐣','🐣','🐣','🐉','🐉','🐉','🐉'];
 
 export const ONBOARDING_XP = {
-  phd: 1000,
+  // Credentials
+  phd: 1200,
   masters: 400,
-  authoredBook: 1200,
+  postdoc: 400,
+  // Publications
+  authoredBook: 2000,
+  editedVolume: 700,
   firstAuthorPaper: 500,
   coAuthorPaper: 150,
-  grantPI: 600,
+  softwareDataset: 350,
+  // Grants & patents
+  grantPI: 900,
   grantCoI: 200,
+  patent: 450,
+  // Recognition
   invitedTalk: 200,
   conferenceTalk: 100,
+  majorAward: 400,
+  // Supervision & service
   phdStudentSupervised: 300,
   mastersStudentSupervised: 150,
   peerReview: 80,
+  thesisExamined: 150,
+  editorialRole: 300,
 };
 
 export const DEFAULT_SETTINGS: XPSettings = {
@@ -307,7 +314,6 @@ export const DEFAULT_SETTINGS: XPSettings = {
   projectsFolder: 'Efforts',
   atomTag: 'cards/atom',
   readingStatusField: 'keywords',
-  readingTagUnprocessed: '📥',
   readingTagSkimmed: '👀',
   readingTagCompleted: '✅',
   atomNoteTagField: 'tags',
