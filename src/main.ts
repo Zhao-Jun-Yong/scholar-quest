@@ -272,6 +272,10 @@ export default class ScholarQuestPlugin extends Plugin {
     const saved = await this.loadData();
     const savedSettings = saved?.settings ?? {} as any;
     this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings);
+    // Migrate stale tierNames (old versions had fewer tiers with different names)
+    if (!this.settings.tierNames || this.settings.tierNames.length !== DEFAULT_SETTINGS.tierNames.length) {
+      this.settings.tierNames = [...DEFAULT_SETTINGS.tierNames];
+    }
     // Migrate old builtinActivities/customActivities to manualActivities
     if (savedSettings.builtinActivities !== undefined || savedSettings.customActivities !== undefined) {
       this.settings.manualActivities = [

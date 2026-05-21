@@ -1,10 +1,9 @@
 import { App, Modal, Setting } from 'obsidian';
 import { XPEngine } from './xp-engine';
-import { ONBOARDING_XP, TIER_ICONS, TIER_LEVEL_RANGES } from './constants';
+import { ONBOARDING_XP, TIER_LEVEL_RANGES } from './constants';
 import { THEMES, THEME_AVATARS, AvatarTheme } from './tier-avatars';
 
 const DRAGON_PREVIEW_IDX = 10; // T11 dragon
-const MAX_ROLLS = 3;
 
 export interface OnboardingData {
   phd: boolean;
@@ -27,10 +26,7 @@ export class OnboardingModal extends Modal {
   private onConfirm: (xp: number, careerData: OnboardingData) => Promise<void>;
   private data: OnboardingData;
   private previewEl!: HTMLElement;
-  private rollsLeft: number = MAX_ROLLS;
-  private dragonEl!: HTMLElement;
-  private themeNameEl!: HTMLElement;
-  private rollBtn!: HTMLButtonElement;
+  private themeCards: Map<AvatarTheme, HTMLElement> = new Map();
 
   constructor(app: App, engine: XPEngine, onConfirm: (xp: number, careerData: OnboardingData) => Promise<void>) {
     super(app);
@@ -48,24 +44,15 @@ export class OnboardingModal extends Modal {
     };
   }
 
-  private rollTheme(): void {
-    if (this.rollsLeft <= 0) return;
-    const others = THEMES.filter(t => t !== this.data.avatarTheme);
-    this.data.avatarTheme = others[Math.floor(Math.random() * others.length)];
-    this.rollsLeft--;
-    this.updateDragonDisplay();
-  }
-
-  private updateDragonDisplay(): void {
-    this.dragonEl.innerHTML = THEME_AVATARS[this.data.avatarTheme][DRAGON_PREVIEW_IDX];
-    const name = this.data.avatarTheme.charAt(0).toUpperCase() + this.data.avatarTheme.slice(1);
-    this.themeNameEl.setText(`${name} Dragon`);
-    if (this.rollsLeft > 0) {
-      this.rollBtn.textContent = `🎲 Roll (${this.rollsLeft} left)`;
-      this.rollBtn.disabled = false;
-    } else {
-      this.rollBtn.textContent = 'No rolls left';
-      this.rollBtn.disabled = true;
+  private selectTheme(theme: AvatarTheme): void {
+    this.data.avatarTheme = theme;
+    for (const [t, card] of this.themeCards) {
+      card.style.border = t === theme
+        ? '2px solid var(--interactive-accent)'
+        : '2px solid var(--background-modifier-border)';
+      card.style.background = t === theme
+        ? 'var(--background-secondary-alt)'
+        : 'transparent';
     }
   }
 
@@ -106,8 +93,7 @@ export class OnboardingModal extends Modal {
     const tierIdx = TIER_LEVEL_RANGES.findIndex(r => level >= r.min && level <= r.max);
     const idx = tierIdx >= 0 ? tierIdx : TIER_LEVEL_RANGES.length - 1;
     const tierName = this.engine.getSettings().tierNames[idx];
-    const icon = TIER_ICONS[idx];
-    this.previewEl.setText(`${icon} ${tierName} · Level ${level} · ${xp.toLocaleString()} XP`);
+    this.previewEl.setText(`${tierName} · Level ${level} · ${xp.toLocaleString()} XP`);
   }
 
   private numField(setting: Setting, setter: (v: number) => void): void {
@@ -127,24 +113,33 @@ export class OnboardingModal extends Modal {
     contentEl.empty();
     contentEl.createEl('h2', { text: 'Welcome to Scholar Quest' });
 
-    // ── Dragon roll section ───────────────────────────────────────────────────
+    // ── Dragon picker ─────────────────────────────────────────────────────────
     const dragonSection = contentEl.createDiv();
-    dragonSection.style.cssText = 'text-align: center; margin: 16px 0 24px; padding: 16px; background: var(--background-secondary); border-radius: 10px;';
+    dragonSection.style.cssText = 'margin: 16px 0 24px; padding: 16px; background: var(--background-secondary); border-radius: 10px;';
 
-    dragonSection.createEl('p', { text: 'Your dragon awaits. Roll to discover its colour.' })
-      .style.cssText = 'margin: 0 0 12px; color: var(--text-muted); font-size: 0.9em;';
+    dragonSection.createEl('p', { text: 'Choose your dragon. This cannot be changed later.' })
+      .style.cssText = 'margin: 0 0 12px; color: var(--text-muted); font-size: 0.9em; text-align: center;';
 
-    this.dragonEl = dragonSection.createDiv();
-    this.dragonEl.style.cssText = 'width: 120px; height: 120px; margin: 0 auto 8px; image-rendering: pixelated;';
+    const grid = dragonSection.createDiv();
+    grid.style.cssText = 'display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;';
 
-    this.themeNameEl = dragonSection.createEl('div');
-    this.themeNameEl.style.cssText = 'font-weight: 600; font-size: 1.1em; margin-bottom: 12px;';
+    this.themeCards.clear();
+    for (const theme of THEMES) {
+      const card = grid.createDiv();
+      card.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border-radius: 8px; cursor: pointer; border: 2px solid var(--background-modifier-border); transition: border 0.1s;';
 
-    this.rollBtn = dragonSection.createEl('button');
-    this.rollBtn.style.cssText = 'padding: 6px 16px; font-size: 0.9em; cursor: pointer;';
-    this.rollBtn.onclick = () => this.rollTheme();
+      const avatarEl = card.createDiv();
+      avatarEl.style.cssText = 'width: 64px; height: 64px; image-rendering: pixelated;';
+      avatarEl.innerHTML = THEME_AVATARS[theme][DRAGON_PREVIEW_IDX];
 
-    this.updateDragonDisplay();
+      card.createSpan({ text: theme.charAt(0).toUpperCase() + theme.slice(1) })
+        .style.cssText = 'font-size: 0.72em; color: var(--text-muted);';
+
+      this.themeCards.set(theme, card);
+      card.onclick = () => this.selectTheme(theme);
+    }
+
+    this.selectTheme('purple');
 
     contentEl.createEl('p', {
       text: 'Tell us about your academic career so far. Rough estimates are fine — this calibrates your starting level.',
@@ -214,7 +209,8 @@ export class OnboardingModal extends Modal {
     const preview = contentEl.createDiv();
     preview.style.cssText = 'margin: 16px 0; padding: 12px; background: var(--background-secondary); border-radius: 6px; text-align: center; font-size: 1.1em;';
     preview.createSpan({ text: 'Estimated starting rank: ' });
-    this.previewEl = preview.createEl('strong', { text: '✨ Spark · Level 1 · 0 XP' });
+    this.previewEl = preview.createEl('strong');
+    this.updatePreview();
 
     new Setting(contentEl)
       .addButton(b => b
