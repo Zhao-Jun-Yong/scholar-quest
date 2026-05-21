@@ -181,6 +181,15 @@ https://doi.org/10.5281/zenodo.19467725
 
 A `CITATION.cff` file is included for automated citation tools (GitHub, Zotero, Zenodo).
 
+## Data Access
+
+Scholar Quest reads file paths and frontmatter from your vault in two specific situations:
+
+- **First-run vault scan** — on initial install, all markdown files are scanned once to award historical XP for papers already marked as read and notes already tagged as atomic. This is a one-time operation; subsequent XP is awarded incrementally as you work.
+- **Project milestone initialisation** — on each startup, project files in your configured projects folder are scanned to ensure milestone records exist for them.
+
+No file content or metadata is sent outside Obsidian. All plugin data is stored locally in `.obsidian/plugins/scholar-quest/data.json`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
