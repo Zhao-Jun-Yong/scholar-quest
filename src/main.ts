@@ -5,7 +5,7 @@ import { ManualLogger } from './manual-logger';
 import { MilestoneModal } from './milestone-modal';
 import { StatusBar } from './status-bar';
 import { ScholarQuestSettings } from './settings';
-import { OnboardingModal, emptyCareerData } from './onboarding-modal';
+import { OnboardingModal, emptyCareerData, calcCareerXP } from './onboarding-modal';
 import { SidebarView, SIDEBAR_VIEW_TYPE } from './sidebar-view';
 import { OnboardingData, PluginData, XPSettings } from './types';
 import { DEFAULT_MILESTONE_TEMPLATES, DEFAULT_SETTINGS, ACHIEVEMENTS } from './constants';
@@ -170,12 +170,13 @@ export default class ScholarQuestPlugin extends Plugin {
         : undefined);
 
     new OnboardingModal(this.app, this.engine, async (xp, careerData) => {
-      const prev = this.pluginData.activities.find(a => a.type === 'career-init');
-      const prevXP = prev?.xp ?? 0;
+      // Derive previous career XP from stored careerData rather than the activity log —
+      // the log may have overflowed, pushing the career-init entry out.
+      const prevXP = this.pluginData.careerData ? calcCareerXP(this.pluginData.careerData) : 0;
 
-      if (prev) {
-        this.pluginData.totalXP = Math.max(0, this.pluginData.totalXP - prev.xp);
-        this.pluginData.todayXP = Math.max(0, this.pluginData.todayXP - prev.xp);
+      if (prevXP > 0) {
+        this.pluginData.totalXP = Math.max(0, this.pluginData.totalXP - prevXP);
+        this.pluginData.todayXP = Math.max(0, this.pluginData.todayXP - prevXP);
         this.pluginData.activities = this.pluginData.activities.filter(a => a.type !== 'career-init');
         this.engine.recalculateLevel();
       }

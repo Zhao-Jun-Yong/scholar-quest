@@ -463,3 +463,126 @@ describe('VaultWatcher.onMetadataChange — startup re-award fix', () => {
     );
   });
 });
+
+describe('VaultWatcher.onMetadataChange — Ideas/Projects startup guard (B2/B3)', () => {
+  const makeEngine = (snapshots: Record<string, any> = {}, acts: any[] = []) => ({
+    awardXP: jest.fn(async () => {}),
+    getData: () => ({ snapshots, activities: acts }),
+    getTodayDate: () => '2026-05-25',
+  } as any);
+
+  it('B2: does not award atomic-note-developed XP for a note edited before plugin loaded', async () => {
+    const past = Date.now() - 3_600_000;
+    const snapshots: Record<string, any> = {
+      'Atlas/Ideas/note.md': { wordCount: 100, linkCount: 0, keywords: [], peakWordCount: 100 },
+    };
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'word '.repeat(200)) } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { tags: ['cards/atom'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Atlas/Ideas/note.md', basename: 'note', stat: { mtime: past } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(engine.awardXP).not.toHaveBeenCalled();
+  });
+
+  it('B2: awards atomic-note-developed XP for a note edited after plugin loaded', async () => {
+    const future = Date.now() + 60_000;
+    const snapshots: Record<string, any> = {
+      'Atlas/Ideas/note.md': { wordCount: 100, linkCount: 0, keywords: [], peakWordCount: 100 },
+    };
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'word '.repeat(200)) } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { tags: ['cards/atom'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Atlas/Ideas/note.md', basename: 'note', stat: { mtime: future } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(engine.awardXP).toHaveBeenCalledWith(
+      expect.any(Number), 'atomic-note-developed', expect.any(String), expect.any(String)
+    );
+  });
+
+  it('B3: does not award writing-progress XP for a project file edited before plugin loaded', async () => {
+    const past = Date.now() - 3_600_000;
+    const snapshots: Record<string, any> = {
+      'Efforts/thesis.md': { wordCount: 1000, linkCount: 0, keywords: [], peakWordCount: 1000 },
+    };
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'word '.repeat(1200)) } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { tags: ['project/thesis'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Efforts/thesis.md', basename: 'thesis', stat: { mtime: past } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(engine.awardXP).not.toHaveBeenCalled();
+  });
+
+  it('B3: does not advance peakWordCount for a project file on a startup event', async () => {
+    const past = Date.now() - 3_600_000;
+    const snapshots: Record<string, any> = {
+      'Efforts/thesis.md': { wordCount: 1000, linkCount: 0, keywords: [], peakWordCount: 1000 },
+    };
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'word '.repeat(1200)) } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { tags: ['project/thesis'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Efforts/thesis.md', basename: 'thesis', stat: { mtime: past } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(snapshots['Efforts/thesis.md'].peakWordCount).toBe(1000);
+  });
+});
+
+describe('VaultWatcher.onFileCreate — preserve existing snapshot fields (B4)', () => {
+  const makeEngine = (snapshots: Record<string, any> = {}) => ({
+    awardXP: jest.fn(async () => {}),
+    getData: () => ({ snapshots, activities: [] }),
+    getTodayDate: () => '2026-05-25',
+  } as any);
+
+  it('B4: preserves completedAt/skimmedAt for a pre-existing Sources file', async () => {
+    const completedAt = Date.now() - 86_400_000;
+    const snapshots: Record<string, any> = {
+      'Atlas/Sources/paper.md': { wordCount: 500, linkCount: 2, keywords: ['✅'], peakWordCount: 500, completedAt, skimmedAt: completedAt },
+    };
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'content') } as any;
+    const metadataCache = { getFileCache: () => ({ frontmatter: { keywords: ['✅'] } }) } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Atlas/Sources/paper.md', basename: 'paper', stat: { ctime: Date.now() - 1_000_000, mtime: Date.now() - 1000 } } as any;
+
+    await w.onFileCreate(file);
+
+    expect(snapshots['Atlas/Sources/paper.md'].completedAt).toBe(completedAt);
+    expect(snapshots['Atlas/Sources/paper.md'].skimmedAt).toBe(completedAt);
+  });
+
+  it('B4: preserves peakWordCount for a pre-existing Ideas file', async () => {
+    const snapshots: Record<string, any> = {
+      'Atlas/Ideas/note.md': { wordCount: 300, linkCount: 5, keywords: [], peakWordCount: 400, lastDevelopmentAt: Date.now() - 3600 },
+    };
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'word '.repeat(250)) } as any;
+    const metadataCache = { getFileCache: () => ({ frontmatter: { tags: ['cards/atom'] } }) } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Atlas/Ideas/note.md', basename: 'note', stat: { ctime: Date.now() - 1_000_000, mtime: Date.now() - 1000 } } as any;
+
+    await w.onFileCreate(file);
+
+    expect(snapshots['Atlas/Ideas/note.md'].peakWordCount).toBe(400);
+    expect(snapshots['Atlas/Ideas/note.md'].lastDevelopmentAt).toBeDefined();
+  });
+});

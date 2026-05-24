@@ -7,6 +7,31 @@ import { importFromOrcid, normalizeOrcidId, validateOrcidId } from './orcid-impo
 
 const DRAGON_PREVIEW_IDX = 10; // T11 dragon
 
+export function calcCareerXP(d: OnboardingData): number {
+  const x = ONBOARDING_XP;
+  return (
+    (d.phd ? x.phd : 0) +
+    (d.masters ? x.masters : 0) +
+    d.postdocs * x.postdoc +
+    d.authoredBooks * x.authoredBook +
+    d.editedVolumes * x.editedVolume +
+    d.firstAuthorPapers * x.firstAuthorPaper +
+    d.coAuthorPapers * x.coAuthorPaper +
+    d.softwareDatasets * x.softwareDataset +
+    d.grantsPI * x.grantPI +
+    d.grantsCoI * x.grantCoI +
+    d.patents * x.patent +
+    d.invitedTalks * x.invitedTalk +
+    d.conferenceTalks * x.conferenceTalk +
+    d.majorAwards * x.majorAward +
+    d.phdStudents * x.phdStudentSupervised +
+    d.mastersStudents * x.mastersStudentSupervised +
+    d.peerReviews * x.peerReview +
+    d.thesesExamined * x.thesisExamined +
+    d.editorialRoles * x.editorialRole
+  );
+}
+
 export function emptyCareerData(avatarTheme: string = 'purple'): OnboardingData {
   return {
     phd: false, masters: false, postdocs: 0,

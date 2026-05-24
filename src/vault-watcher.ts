@@ -123,11 +123,20 @@ export class VaultWatcher {
 
     const content = await this.vault.read(file);
     const wordCount = this.countWords(content);
+    const existing = data.snapshots[file.path];
+    // Preserve guards and accumulated state from prior sessions when Obsidian fires
+    // 'create' for pre-existing files during startup vault indexing.
     data.snapshots[file.path] = {
       wordCount,
       linkCount: this.countWikilinks(content),
       keywords: this.extractKeywords((cache?.frontmatter as Record<string, unknown>) ?? null),
-      peakWordCount: wordCount,
+      peakWordCount: existing?.peakWordCount ?? wordCount,
+      lastDevelopmentAt: existing?.lastDevelopmentAt,
+      completedAt: existing?.completedAt,
+      skimmedAt: existing?.skimmedAt,
+      dailyWritingDate: existing?.dailyWritingDate,
+      dailyWritingStart: existing?.dailyWritingStart,
+      writingBonusAwarded: existing?.writingBonusAwarded,
     };
   }
 
@@ -190,11 +199,14 @@ export class VaultWatcher {
     const newWordCount = this.countWords(content);
     const newLinkCount = this.countWikilinks(content);
 
+    // Only award Ideas/Projects XP for files modified after the plugin loaded.
+    const isLiveChange = file.stat.mtime >= this.loadedAt;
+
     if (inIdeas) {
       const rawAtomTags = cache?.frontmatter?.[this.settings.atomNoteTagField];
       const atomTags: string[] = Array.isArray(rawAtomTags) ? rawAtomTags : [];
 
-      if (this.hasTag(atomTags, this.settings.atomTag) && snapshot) {
+      if (this.hasTag(atomTags, this.settings.atomTag) && snapshot && isLiveChange) {
         if (this.shouldAwardDevelopmentXP(snapshot, newWordCount, newLinkCount)) {
           await this.engine.awardXP(
             this.settings.xpAtomicNoteDeveloped,
@@ -221,30 +233,34 @@ export class VaultWatcher {
       const knownProjectTags = Object.values(this.settings.projectTags);
 
       if (snapshot && knownProjectTags.some(tag => this.hasTag(projectTags, tag))) {
-        const xp = this.writingProgressXP(snapshot.peakWordCount, newWordCount);
-        if (xp > 0) {
-          await this.engine.awardXP(xp, 'writing-progress', `Writing: ${file.basename}`, file.path);
-        }
+        if (isLiveChange) {
+          const xp = this.writingProgressXP(snapshot.peakWordCount, newWordCount);
+          if (xp > 0) {
+            await this.engine.awardXP(xp, 'writing-progress', `Writing: ${file.basename}`, file.path);
+          }
 
-        const today = this.engine.getTodayDate();
-        if (snapshot.dailyWritingDate !== today) {
-          snapshot.dailyWritingDate = today;
-          snapshot.dailyWritingStart = snapshot.wordCount;
-          snapshot.writingBonusAwarded = false;
-        }
-        const dailyProgress = newWordCount - (snapshot.dailyWritingStart ?? newWordCount);
-        const bonusThreshold = this.settings.writingSessionBonusThreshold ?? 500;
-        const bonusXP = this.settings.xpWritingSessionBonus ?? 50;
-        if (!snapshot.writingBonusAwarded && dailyProgress >= bonusThreshold) {
-          await this.engine.awardXP(bonusXP, 'writing-progress', `Writing session bonus: ${file.basename}`, file.path);
-          snapshot.writingBonusAwarded = true;
+          const today = this.engine.getTodayDate();
+          if (snapshot.dailyWritingDate !== today) {
+            snapshot.dailyWritingDate = today;
+            snapshot.dailyWritingStart = snapshot.wordCount;
+            snapshot.writingBonusAwarded = false;
+          }
+          const dailyProgress = newWordCount - (snapshot.dailyWritingStart ?? newWordCount);
+          const bonusThreshold = this.settings.writingSessionBonusThreshold ?? 500;
+          const bonusXP = this.settings.xpWritingSessionBonus ?? 50;
+          if (!snapshot.writingBonusAwarded && dailyProgress >= bonusThreshold) {
+            await this.engine.awardXP(bonusXP, 'writing-progress', `Writing session bonus: ${file.basename}`, file.path);
+            snapshot.writingBonusAwarded = true;
+          }
         }
 
         data.snapshots[file.path] = {
           wordCount: newWordCount,
           linkCount: newLinkCount,
           keywords: newKeywords,
-          peakWordCount: Math.max(snapshot.peakWordCount ?? 0, newWordCount),
+          peakWordCount: isLiveChange
+            ? Math.max(snapshot.peakWordCount ?? 0, newWordCount)
+            : (snapshot.peakWordCount ?? newWordCount),
           lastDevelopmentAt: snapshot.lastDevelopmentAt,
           dailyWritingDate: snapshot.dailyWritingDate,
           dailyWritingStart: snapshot.dailyWritingStart,
