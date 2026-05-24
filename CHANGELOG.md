@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0] — 2026-05-24
+
+### New features
+
+- **ORCID import in career calibration** — paste your ORCID iD in the career calibration wizard to pre-fill publications, grants, peer reviews, invited talks, awards, and editorial roles from your public profile. Fields auto-filled by ORCID are highlighted with an accent border so you know what to review. First-author vs co-author split uses contributor position in your ORCID record. Three fields have no ORCID equivalent (students supervised, theses examined) and remain manual.
+
+### Bug fixes
+
+- **Vault scan flooded activity log** — the first-time vault scan called `awardXP()` once per paper, which caused large vaults (500+ papers) to overflow the 500-entry activity log and silently drop prior entries including career history. The scan now accumulates XP and posts a single `vault-scan` summary entry, keeping the log intact.
+
+---
+
 ## [1.3.1] — 2026-05-21
 
 ### Bug fixes

@@ -10,7 +10,7 @@ An [Obsidian](https://obsidian.md) plugin that gamifies academic work with XP, l
 ## Features
 
 - **Auto-detected XP** — earn points for reading papers, creating and developing atomic notes, and writing in project files
-- **Career calibration** — onboarding wizard estimates your starting level from your academic history across 6 categories (credentials, publications, grants & patents, recognition, supervision & service); re-opens with previous values pre-filled so you only update what has changed
+- **Career calibration** — onboarding wizard estimates your starting level from your academic history across 6 categories; paste your ORCID iD to pre-fill publications, grants, peer reviews, talks, and awards automatically; re-opens with previous values pre-filled so you only update what has changed
 - **Milestone system** — 14 project types with predefined milestone templates; mark milestones complete via the sidebar or command palette
 - **Sidebar panel** — tier avatar, XP progress bar, daily word count with session bonus tracker, streak counter, recent activity feed, achievements, and active projects with pending milestones
 - **Achievement system** — 36 pixel art achievements tied to XP milestones, level thresholds, activity counts, and career events
@@ -40,7 +40,7 @@ Download `main.js` and `manifest.json` from the [latest release](https://github.
 
 1. **Install** the plugin (Settings → Community plugins → Browse → search "Scholar Quest")
 2. **Open Obsidian** — the career calibration wizard appears automatically on first launch
-3. **Enter your academic history** across credentials, publications, grants & patents, recognition, and supervision & service — rough estimates are fine — then click "Set starting level", or click "Start at Level 1" to begin fresh
+3. **Enter your academic history** — optionally paste your ORCID iD to pre-fill most fields automatically, then review and adjust; or fill in manually. Click "Set starting level", or "Start at Level 1" to begin fresh.
 4. **Open the sidebar** via the graduation cap icon in the ribbon
 5. **Work normally** — XP accumulates in the background as you read papers, develop notes, and hit milestones
 
@@ -61,6 +61,8 @@ Download `main.js` and `manifest.json` from the [latest release](https://github.
 ## Career Calibration
 
 The career wizard awards starting XP across 19 fields in 6 categories. Re-opening it (via "Import career history") pre-fills all previous values — only update what has changed, and the XP difference is applied automatically.
+
+**ORCID import:** paste your ORCID iD (or `https://orcid.org/...` URL) at the top of the wizard to pre-fill publications, grants, peer reviews, invited talks, awards, and editorial roles from your public profile. Fields that were auto-filled are highlighted with an accent border. Three fields have no ORCID equivalent (students supervised, theses examined) and remain manual.
 
 | Category | Field | XP |
 |---|---|---|
@@ -159,6 +161,7 @@ Go to **Settings → Scholar Quest** to configure:
 
 - Zotero integration for richer reading progress tracking
 - Shareable profile card
+- Social layer (leaderboard, mission board) — planned after community adoption
 
 ## Development
 
@@ -175,7 +178,7 @@ npm test       # run tests
 If you use Scholar Quest in your work, please cite it:
 
 ```
-Yong, Z.-J. (2026). Scholar Quest: Gamify your academic workflow with XP and levels (v1.2.0).
+Yong, Z.-J. (2026). Scholar Quest: Gamify your academic workflow with XP and levels (v1.4.0).
 https://doi.org/10.5281/zenodo.19467725
 ```
 
