@@ -250,11 +250,12 @@ export class VaultWatcher {
     this.onUpdate?.();
   }
 
-  async scanVault(awardXP: boolean): Promise<{ papers: number; notes: number }> {
+  async scanVault(awardXP: boolean): Promise<{ papers: number; notes: number; xp: number }> {
     const data = this.engine.getData();
     const files = this.vault.getMarkdownFiles();
     let papers = 0;
     let notes = 0;
+    let xp = 0;
 
     for (const file of files) {
       const cache = this.metadataCache.getFileCache(file);
@@ -269,17 +270,8 @@ export class VaultWatcher {
         const isSkimmed = keywords.some(k => k.includes(this.settings.readingTagSkimmed));
         const now = Date.now();
         if (awardXP) {
-          if (isCompleted) {
-            await this.engine.awardXP(
-              this.settings.xpPaperCompleted, 'paper-completed',
-              `History: ${file.basename}`, file.path
-            );
-          } else if (isSkimmed) {
-            await this.engine.awardXP(
-              this.settings.xpPaperSkimmed, 'paper-skimmed',
-              `History: ${file.basename}`, file.path
-            );
-          }
+          if (isCompleted) xp += this.settings.xpPaperCompleted;
+          else if (isSkimmed) xp += this.settings.xpPaperSkimmed;
         }
         data.snapshots[file.path] = {
           wordCount, linkCount, keywords, peakWordCount: wordCount,
@@ -291,18 +283,13 @@ export class VaultWatcher {
         const rawTags = cache?.frontmatter?.[this.settings.atomNoteTagField];
         const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
         if (this.hasTag(tags, this.settings.atomTag) && !this.isSummaryFile(file.name)) {
-          if (awardXP) {
-            await this.engine.awardXP(
-              this.settings.xpAtomicNoteCreated, 'atomic-note-created',
-              `History: ${file.basename}`, file.path
-            );
-          }
+          if (awardXP) xp += this.settings.xpAtomicNoteCreated;
           notes++;
         }
         data.snapshots[file.path] = { wordCount, linkCount, keywords, peakWordCount: wordCount };
       }
     }
 
-    return { papers, notes };
+    return { papers, notes, xp };
   }
 }

@@ -9,7 +9,8 @@ export type ActivityType =
   | 'milestone-completed'
   | 'manual-log'
   | 'career-init'
-  | 'daily-presence';
+  | 'daily-presence'
+  | 'vault-scan';
 
 export interface ActivityEntry {
   timestamp: number;

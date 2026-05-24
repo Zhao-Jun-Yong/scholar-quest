@@ -44,7 +44,7 @@ export default class ScholarQuestPlugin extends Plugin {
     // via sidebar click), manual-log (already noticed via ManualLogger), and writing-progress
     // < 20 XP (sub-threshold increments accumulate silently).
     this.engine.onXPAwarded = (xp, type, label) => {
-      const suppress = new Set<typeof type>(['career-init', 'milestone-completed', 'manual-log']);
+      const suppress = new Set<typeof type>(['career-init', 'milestone-completed', 'manual-log', 'vault-scan']);
       if (suppress.has(type)) return;
       if (type === 'writing-progress' && xp < 20) return;
       new Notice(`+${xp} XP — ${label}`);
@@ -241,13 +241,17 @@ export default class ScholarQuestPlugin extends Plugin {
 
   async runVaultScan(): Promise<void> {
     const isFirst = !this.pluginData.hasVaultScanned;
-    const { papers, notes } = await this.watcher.scanVault(isFirst);
+    const { papers, notes, xp } = await this.watcher.scanVault(isFirst);
+    if (isFirst && xp > 0) {
+      await this.engine.awardXP(xp, 'vault-scan',
+        `Vault import: ${papers} papers, ${notes} notes`);
+    }
     this.pluginData.hasVaultScanned = true;
     await this.savePluginData();
 
     const action = isFirst ? 'Vault import complete' : 'Vault rescan complete';
     const detail = isFirst
-      ? `Found ${papers} papers, ${notes} atomic notes. XP awarded for your reading history.`
+      ? `Found ${papers} papers, ${notes} atomic notes. +${xp} XP for your reading history.`
       : `Rebuilt baselines for ${papers} papers, ${notes} atomic notes. No XP awarded.`;
     new Notice(`📚 ${action} — ${detail}`, 6000);
   }

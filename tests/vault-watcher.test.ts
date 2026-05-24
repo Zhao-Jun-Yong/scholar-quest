@@ -265,7 +265,7 @@ describe('VaultWatcher.scanVault', () => {
     stat: { ctime: 0 },
   });
 
-  it('awards paper-completed XP for completed papers on first scan', async () => {
+  it('returns paper-completed XP in result for completed papers on first scan', async () => {
     const { engine, awarded, snapshots } = makeEngine();
     const file = makeFile('Atlas/Sources/paper.md');
     const vault = { getMarkdownFiles: () => [file], read: async () => 'body text' } as any;
@@ -275,12 +275,13 @@ describe('VaultWatcher.scanVault', () => {
     const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
     const result = await w.scanVault(true);
 
-    expect(awarded).toContainEqual({ xp: 50, type: 'paper-completed' });
+    expect(result.xp).toBe(50);
     expect(result.papers).toBe(1);
+    expect(awarded).toHaveLength(0); // XP returned in bulk; caller awards it
     expect(snapshots['Atlas/Sources/paper.md']).toBeDefined();
   });
 
-  it('awards paper-skimmed XP for skimmed papers on first scan', async () => {
+  it('returns paper-skimmed XP in result for skimmed papers on first scan', async () => {
     const { engine, awarded } = makeEngine();
     const file = makeFile('Atlas/Sources/paper2.md');
     const vault = { getMarkdownFiles: () => [file], read: async () => 'body' } as any;
@@ -288,9 +289,10 @@ describe('VaultWatcher.scanVault', () => {
       getFileCache: () => ({ frontmatter: { keywords: ['👀 reading'] } }),
     } as any;
     const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
-    await w.scanVault(true);
+    const result = await w.scanVault(true);
 
-    expect(awarded).toContainEqual({ xp: 20, type: 'paper-skimmed' });
+    expect(result.xp).toBe(20);
+    expect(awarded).toHaveLength(0);
   });
 
   it('does not award XP for unprocessed papers even on first scan', async () => {
@@ -306,7 +308,7 @@ describe('VaultWatcher.scanVault', () => {
     expect(awarded).toHaveLength(0);
   });
 
-  it('awards atomic-note-created XP for atom notes on first scan', async () => {
+  it('returns atomic-note-created XP in result for atom notes on first scan', async () => {
     const { engine, awarded } = makeEngine();
     const file = makeFile('Atlas/Ideas/my-note.md');
     const vault = { getMarkdownFiles: () => [file], read: async () => 'content' } as any;
@@ -316,8 +318,9 @@ describe('VaultWatcher.scanVault', () => {
     const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
     const result = await w.scanVault(true);
 
-    expect(awarded).toContainEqual({ xp: 30, type: 'atomic-note-created' });
+    expect(result.xp).toBe(30);
     expect(result.notes).toBe(1);
+    expect(awarded).toHaveLength(0);
   });
 
   it('skips summary_ files in ideasFolder', async () => {
