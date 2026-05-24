@@ -400,3 +400,66 @@ describe('VaultWatcher.onMetadataChange — B2/B3/B4 fixes', () => {
     expect(vault.read).not.toHaveBeenCalled();
   });
 });
+
+describe('VaultWatcher.onMetadataChange — startup re-award fix', () => {
+  const makeEngine = (snapshots: Record<string, any> = {}) => ({
+    awardXP: jest.fn(async () => {}),
+    getData: () => ({ snapshots }),
+  } as any);
+
+  it('does not award XP for a file modified before plugin loaded (startup event)', async () => {
+    const past = Date.now() - 60_000;
+    const snapshots: Record<string, any> = {
+      'Atlas/Sources/old.md': { wordCount: 100, linkCount: 0, keywords: [], peakWordCount: 100 },
+    };
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'content') } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { keywords: ['✅'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Atlas/Sources/old.md', basename: 'old', stat: { mtime: past } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(engine.awardXP).not.toHaveBeenCalled();
+  });
+
+  it('bootstraps completedAt in snapshot when file was completed before plugin loaded', async () => {
+    const past = Date.now() - 60_000;
+    const snapshots: Record<string, any> = {
+      'Atlas/Sources/old.md': { wordCount: 100, linkCount: 0, keywords: [], peakWordCount: 100 },
+    };
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'content') } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { keywords: ['✅'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Atlas/Sources/old.md', basename: 'old', stat: { mtime: past } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(snapshots['Atlas/Sources/old.md'].completedAt).toBeDefined();
+  });
+
+  it('awards XP for a file modified after plugin loaded (live change)', async () => {
+    const future = Date.now() + 60_000;
+    const snapshots: Record<string, any> = {
+      'Atlas/Sources/new.md': { wordCount: 100, linkCount: 0, keywords: ['👀'], peakWordCount: 100, skimmedAt: Date.now() - 1000 },
+    };
+    const engine = makeEngine(snapshots);
+    const vault = { read: jest.fn(async () => 'content') } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { keywords: ['✅'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Atlas/Sources/new.md', basename: 'new', stat: { mtime: future } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(engine.awardXP).toHaveBeenCalledWith(
+      expect.any(Number), 'paper-completed', expect.any(String), expect.any(String)
+    );
+  });
+});

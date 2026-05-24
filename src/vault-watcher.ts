@@ -148,7 +148,10 @@ export class VaultWatcher {
 
     // Reading progress (sources folder only)
     if (inSources) {
-      if (snapshot) {
+      // Only award XP for files modified after the plugin loaded — prevents re-awarding
+      // historical reading status on every reload when startup metadata events fire.
+      const isLiveChange = file.stat.mtime >= this.loadedAt;
+      if (snapshot && isLiveChange) {
         const progress = this.detectReadingProgress(snapshot.keywords, newKeywords);
         if (progress === 'skimmed' && !snapshot.skimmedAt) {
           snapshot.skimmedAt = Date.now();
@@ -163,17 +166,20 @@ export class VaultWatcher {
           );
         }
       }
-      // B4: bootstrap snapshot if missing so the next change can diff correctly
+      // B4: bootstrap snapshot; also set completedAt/skimmedAt if missing so the
+      // completedAt/skimmedAt guard is correct on future reloads.
       const content = await this.vault.read(file);
       const wordCount = this.countWords(content);
+      const isCompleted = newKeywords.some(k => k.includes(this.settings.readingTagCompleted));
+      const isSkimmed = newKeywords.some(k => k.includes(this.settings.readingTagSkimmed));
       data.snapshots[file.path] = {
         wordCount,
         linkCount: this.countWikilinks(content),
         keywords: newKeywords,
         peakWordCount: snapshot?.peakWordCount ?? wordCount,
         lastDevelopmentAt: snapshot?.lastDevelopmentAt,
-        completedAt: snapshot?.completedAt,
-        skimmedAt: snapshot?.skimmedAt,
+        completedAt: snapshot?.completedAt ?? (isCompleted ? Date.now() : undefined),
+        skimmedAt: snapshot?.skimmedAt ?? ((isCompleted || isSkimmed) ? Date.now() : undefined),
       };
       this.onUpdate?.();
       return;
