@@ -178,7 +178,7 @@ npm test       # run tests
 If you use Scholar Quest in your work, please cite it:
 
 ```
-Yong, Z.-J. (2026). Scholar Quest: Gamify your academic workflow with XP and levels (v1.4.0).
+Yong, Z.-J. (2026). Scholar Quest: Gamify your academic workflow with XP and levels (v1.5.0).
 https://doi.org/10.5281/zenodo.19467725
 ```
 
