@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0] — 2026-05-29
+
+### UI
+
+- **Dragon picker shows T1 eggs** — onboarding wizard now previews each colour theme as its Tier 1 egg instead of the Tier 11 dragon; all 7 options (purple, blue, teal, green, crimson, pink, orange) are displayed in a single row using a 7-column grid with responsive sizing
+
+---
+
 ## [1.4.0] — 2026-05-24
 
 ### New features

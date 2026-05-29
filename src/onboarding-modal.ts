@@ -5,7 +5,7 @@ import { THEMES, THEME_AVATARS, AvatarTheme } from './tier-avatars';
 import { OnboardingData } from './types';
 import { importFromOrcid, normalizeOrcidId, validateOrcidId } from './orcid-import';
 
-const DRAGON_PREVIEW_IDX = 10; // T11 dragon
+const DRAGON_PREVIEW_IDX = 0; // T1 egg
 
 export function calcCareerXP(d: OnboardingData): number {
   const x = ONBOARDING_XP;
@@ -224,7 +224,7 @@ export class OnboardingModal extends Modal {
         .style.cssText = 'margin: 0 0 12px; color: var(--text-muted); font-size: 0.9em; text-align: center;';
 
       const grid = dragonSection.createDiv();
-      grid.style.cssText = 'display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;';
+      grid.style.cssText = 'display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;';
 
       this.themeCards.clear();
       for (const theme of THEMES) {
@@ -234,7 +234,7 @@ export class OnboardingModal extends Modal {
           'border-radius: 8px; cursor: pointer; border: 2px solid var(--background-modifier-border); transition: border 0.1s;';
 
         const avatarEl = card.createDiv();
-        avatarEl.style.cssText = 'width: 64px; height: 64px; image-rendering: pixelated;';
+        avatarEl.style.cssText = 'width: 100%; aspect-ratio: 1; image-rendering: pixelated;';
         avatarEl.innerHTML = THEME_AVATARS[theme][DRAGON_PREVIEW_IDX];
 
         card.createSpan({ text: theme.charAt(0).toUpperCase() + theme.slice(1) })
