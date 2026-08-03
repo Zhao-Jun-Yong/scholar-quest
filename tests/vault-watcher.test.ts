@@ -469,6 +469,8 @@ describe('VaultWatcher.onMetadataChange — Ideas/Projects startup guard (B2/B3)
     awardXP: jest.fn(async () => {}),
     getData: () => ({ snapshots, activities: acts }),
     getTodayDate: () => '2026-05-25',
+    getMilestoneRecord: jest.fn(() => undefined),
+    initMilestoneRecord: jest.fn(async () => {}),
   } as any);
 
   it('B2: does not award atomic-note-developed XP for a note edited before plugin loaded', async () => {
@@ -543,6 +545,72 @@ describe('VaultWatcher.onMetadataChange — Ideas/Projects startup guard (B2/B3)
     await w.onMetadataChange(file);
 
     expect(snapshots['Efforts/thesis.md'].peakWordCount).toBe(1000);
+  });
+});
+
+describe('VaultWatcher.onMetadataChange — project type reconciliation', () => {
+  const makeEngine = (currentProjectType: string | undefined, snapshots: Record<string, any> = {}) => ({
+    awardXP: jest.fn(async () => {}),
+    getData: () => ({ snapshots, activities: [] }),
+    getTodayDate: () => '2026-05-25',
+    getMilestoneRecord: jest.fn(() => currentProjectType ? { projectType: currentProjectType } : undefined),
+    initMilestoneRecord: jest.fn(async () => {}),
+  } as any);
+
+  it('reconciles a stale projectType when the frontmatter tag was corrected', async () => {
+    const engine = makeEngine('conference');
+    const vault = { read: jest.fn(async () => 'word '.repeat(50)) } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { tags: ['project/manuscript'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Efforts/proj.md', basename: 'proj', stat: { mtime: Date.now() } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(engine.initMilestoneRecord).toHaveBeenCalledWith('Efforts/proj.md', 'manuscript');
+  });
+
+  it('creates a record for a previously untagged file that just got a project tag', async () => {
+    const engine = makeEngine(undefined);
+    const vault = { read: jest.fn(async () => 'word '.repeat(50)) } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { tags: ['project/conference'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Efforts/proj.md', basename: 'proj', stat: { mtime: Date.now() } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(engine.initMilestoneRecord).toHaveBeenCalledWith('Efforts/proj.md', 'conference');
+  });
+
+  it('does not touch the record when the tag is unchanged', async () => {
+    const engine = makeEngine('conference');
+    const vault = { read: jest.fn(async () => 'word '.repeat(50)) } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { tags: ['project/conference'] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Efforts/proj.md', basename: 'proj', stat: { mtime: Date.now() } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(engine.initMilestoneRecord).not.toHaveBeenCalled();
+  });
+
+  it('leaves an existing record untouched when the project tag is removed entirely', async () => {
+    const engine = makeEngine('conference');
+    const vault = { read: jest.fn(async () => 'word '.repeat(50)) } as any;
+    const metadataCache = {
+      getFileCache: () => ({ frontmatter: { tags: [] } }),
+    } as any;
+    const w = new VaultWatcher(engine, DEFAULT_SETTINGS, vault, metadataCache);
+    const file = { path: 'Efforts/proj.md', basename: 'proj', stat: { mtime: Date.now() } } as any;
+
+    await w.onMetadataChange(file);
+
+    expect(engine.initMilestoneRecord).not.toHaveBeenCalled();
   });
 });
 

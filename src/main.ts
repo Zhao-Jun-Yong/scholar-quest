@@ -10,6 +10,7 @@ import { SidebarView, SIDEBAR_VIEW_TYPE } from './sidebar-view';
 import { OnboardingData, PluginData, XPSettings } from './types';
 import { DEFAULT_MILESTONE_TEMPLATES, DEFAULT_SETTINGS, ACHIEVEMENTS } from './constants';
 import { checkAchievement, checkNewAchievements } from './achievement-engine';
+import { detectProjectType } from './project-type';
 
 const DEFAULT_DATA: PluginData = {
   totalXP: 0,
@@ -266,20 +267,13 @@ export default class ScholarQuestPlugin extends Plugin {
       const cache = this.app.metadataCache.getFileCache(file);
       const rawTags = cache?.frontmatter?.tags;
       const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
-      const projectType = this.detectProjectType(tags);
+      const projectType = detectProjectType(tags, this.settings.projectTags);
       if (projectType) {
         await this.engine.initMilestoneRecord(file.path, projectType, false);
         anyAdded = true;
       }
     }
     if (anyAdded) await this.savePluginData();
-  }
-
-  private detectProjectType(tags: string[]): string | null {
-    for (const [type, tag] of Object.entries(this.settings.projectTags)) {
-      if (tags.includes(tag) || tags.includes('#' + tag)) return type;
-    }
-    return null;
   }
 
   refreshSidebar(): void {

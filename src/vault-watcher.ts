@@ -2,6 +2,7 @@ import { MetadataCache, TFile, Vault } from 'obsidian';
 import { FileSnapshot, XPSettings } from './types';
 import { ATOMIC_NOTE_XP_TIERS } from './constants';
 import { XPEngine } from './xp-engine';
+import { detectProjectType } from './project-type';
 
 export class VaultWatcher {
   private engine: XPEngine;
@@ -231,6 +232,14 @@ export class VaultWatcher {
       const rawProjectTags = cache?.frontmatter?.[this.settings.projectTagField];
       const projectTags: string[] = Array.isArray(rawProjectTags) ? rawProjectTags : [];
       const knownProjectTags = Object.values(this.settings.projectTags);
+
+      // Correct data.milestones[path].projectType if the note's tag was fixed
+      // after a record was already created (e.g. wrong project tag corrected later).
+      const detectedType = detectProjectType(projectTags, this.settings.projectTags);
+      const currentType = this.engine.getMilestoneRecord(file.path)?.projectType;
+      if (detectedType && detectedType !== currentType) {
+        await this.engine.initMilestoneRecord(file.path, detectedType);
+      }
 
       if (snapshot && knownProjectTags.some(tag => this.hasTag(projectTags, tag))) {
         if (isLiveChange) {

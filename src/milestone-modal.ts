@@ -1,6 +1,7 @@
 import { App, Modal, Notice } from 'obsidian';
 import { XPEngine } from './xp-engine';
 import { MilestoneItem, XPSettings } from './types';
+import { detectProjectType } from './project-type';
 
 export class MilestoneModal extends Modal {
   private engine: XPEngine;
@@ -36,7 +37,7 @@ export class MilestoneModal extends Modal {
       const cache = this.app.metadataCache.getCache(filePath);
       const rawTags = cache?.frontmatter?.tags;
       const tags: string[] = Array.isArray(rawTags) ? rawTags : [];
-      const projectType = this.detectProjectType(tags);
+      const projectType = detectProjectType(tags, this.settings.projectTags);
 
       if (!projectType) {
         contentEl.createEl('p', { text: 'No recognised project type tag on this file.' });
@@ -93,13 +94,6 @@ export class MilestoneModal extends Modal {
         this.close();
       };
     }
-  }
-
-  private detectProjectType(tags: string[]): string | null {
-    for (const [type, tag] of Object.entries(this.settings.projectTags)) {
-      if (tags.includes(tag) || tags.includes('#' + tag)) return type;
-    }
-    return null;
   }
 
   onClose(): void {

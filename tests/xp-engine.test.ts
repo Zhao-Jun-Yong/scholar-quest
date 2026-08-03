@@ -175,3 +175,43 @@ describe('XPEngine.completeMilestone', () => {
     expect(data.totalXP).toBe(50); // no double award
   });
 });
+
+describe('XPEngine.initMilestoneRecord — reconciling an existing record', () => {
+  const settings = {
+    ...DEFAULT_SETTINGS,
+    projectTemplates: {
+      ...DEFAULT_SETTINGS.projectTemplates,
+      typeA: { milestones: [{ name: 'Shared step', xp: 50 }, { name: 'A-only step', xp: 30 }] },
+      typeB: { milestones: [{ name: 'Shared step', xp: 50 }, { name: 'B-only step', xp: 40 }] },
+    },
+  };
+
+  it('updates projectType and preserves completedAt for milestones with matching names', async () => {
+    const data = makeData();
+    const e = new XPEngine(data, settings, makeSave());
+    await e.initMilestoneRecord('Efforts/proj.md', 'typeA');
+    await e.completeMilestone('Efforts/proj.md', 'Shared step');
+
+    await e.initMilestoneRecord('Efforts/proj.md', 'typeB');
+
+    const record = data.milestones['Efforts/proj.md'];
+    expect(record.projectType).toBe('typeB');
+    expect(record.milestones.find(m => m.name === 'Shared step')?.completedAt).toBeDefined();
+    expect(record.milestones.find(m => m.name === 'B-only step')?.completedAt).toBeUndefined();
+    expect(record.milestones.find(m => m.name === 'A-only step')).toBeUndefined();
+  });
+
+  it('is a no-op when projectType is unchanged', async () => {
+    const data = makeData();
+    const save = makeSave();
+    const e = new XPEngine(data, settings, save);
+    await e.initMilestoneRecord('Efforts/proj.md', 'typeA');
+    await e.completeMilestone('Efforts/proj.md', 'Shared step');
+    save.mockClear();
+
+    await e.initMilestoneRecord('Efforts/proj.md', 'typeA');
+
+    expect(save).not.toHaveBeenCalled();
+    expect(data.milestones['Efforts/proj.md'].milestones.find(m => m.name === 'Shared step')?.completedAt).toBeDefined();
+  });
+});

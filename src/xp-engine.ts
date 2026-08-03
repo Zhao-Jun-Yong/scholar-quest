@@ -101,10 +101,17 @@ export class XPEngine {
   async initMilestoneRecord(filePath: string, projectType: string, save = true): Promise<void> {
     const template = this.settings.projectTemplates[projectType];
     if (!template) return;
+    const existing = this.data.milestones[filePath];
+    if (existing?.projectType === projectType) return;
+    const prevMilestones = existing?.milestones ?? [];
     this.data.milestones[filePath] = {
       projectType,
       filePath,
-      milestones: template.milestones.map(m => ({ name: m.name, xp: m.xp })),
+      milestones: template.milestones.map(m => ({
+        name: m.name,
+        xp: m.xp,
+        completedAt: prevMilestones.find(p => p.name === m.name)?.completedAt,
+      })),
     };
     if (save) await this.saveCallback();
   }
